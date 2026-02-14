@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\CategoryUser;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class KategoriPribadiController extends Controller
+{
+
+    public function index(Request $request)
+    {
+        $query = CategoryUser::where('user_id', Auth::id());
+
+        // Filter pencarian
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        $categoryuser = $query->paginate(10);
+
+        $kategoriNames = CategoryUser::where('user_id', Auth::id())
+            ->pluck('name')
+            ->unique()
+            ->values()
+            ->all();
+
+        return view('setape.kategoriPribadi.daftar', compact('categoryuser', 'kategoriNames'));
+    }
+
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:category_users,name,NULL,id,user_id,' . Auth::id()
+        ], [
+            'name.required' => 'Nama kategori wajib diisi.',
+            'name.string' => 'Nama kategori harus berupa teks.',
+            'name.max' => 'Nama kategori maksimal 255 karakter.',
+            'name.unique' => 'Nama kategori sudah digunakan.'
+        ]);
+
+        try {
+            CategoryUser::create([
+                'name' => $request->name,
+                'user_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kategori berhasil ditambahkan'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan kategori: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:category_users,name,' . $id . ',id,user_id,' . Auth::id()
+        ], [
+            'name.required' => 'Nama kategori wajib diisi.',
+            'name.string' => 'Nama kategori harus berupa teks.',
+            'name.max' => 'Nama kategori maksimal 255 karakter.',
+            'name.unique' => 'Nama kategori sudah digunakan.'
+        ]);
+
+        try {
+            $category = CategoryUser::where('user_id', Auth::id())->findOrFail($id);
+            $category->update([
+                'name' => $request->name
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Kategori berhasil diperbarui'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui kategori: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $category = CategoryUser::withCount('links')
+                        ->where('id', $id)
+                        ->where('user_id', Auth::id())
+                        ->firstOrFail();
+
+            if ($category->links_count > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak dapat dihapus karena digunakan pada '.$category->links_count.' link'
+                ], 422);
+            }
+
+            $category->delete();
+
+            return response()->json(['success' => true, 'message' => 'Kategori berhasil dihapus']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal menghapus kategori'], 500);
+        }
+    }
+}
