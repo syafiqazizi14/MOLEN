@@ -1,4 +1,6 @@
-@php $title = 'Rekap Honor Tahunan'; @endphp
+@php $title = 'Rekap Honor Tahunan';
+    $months = request('month') ? [request('month')] : range(1, 12);
+@endphp
 @include('mitrabps.headerTemp')
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -89,11 +91,12 @@
 
                         <div class="flex items-center gap-2">
                             <label class="font-bold text-gray-700 text-sm">Bulan Export:</label>
-                            <select name="month" id="monthFilter"
+                            <select name="month" id="monthFilter" onchange="this.form.submit()"
                                 class="border p-2 rounded text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Semua Bulan (Tahunan)</option>
                                 @foreach (range(1, 12) as $m)
-                                    <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                                    <option value="{{ $m }}"
+                                        {{ request('month') == $m ? 'selected' : '' }}>
                                         {{ date('F', mktime(0, 0, 0, $m, 1)) }}
                                     </option>
                                 @endforeach
@@ -112,7 +115,7 @@
                                         class="py-3 px-4 text-left border-b border-r sticky-header-col shadow-sm min-w-[200px]">
                                         Nama Mitra
                                     </th>
-                                    @foreach (range(1, 12) as $m)
+                                    @foreach ($months as $m)
                                         <th class="py-3 px-2 text-center border-b min-w-[150px]">
                                             {{ date('M', mktime(0, 0, 0, $m, 1)) }}
                                         </th>
@@ -140,11 +143,10 @@
                                             </div>
                                         </td>
 
-                                        @foreach (range(1, 12) as $m)
-                                            <td class="py-2 px-2 text-center align-top border-r h-full">
+                                        @foreach ($months as $m)
+                                                <td class="py-2 px-2 text-center align-top border-r h-full">
                                                 @if (isset($mitra['months'][$m]))
                                                     @php $bulanData = $mitra['months'][$m]; @endphp
-
                                                     <div class="flex flex-col h-full justify-between">
                                                         <div class="space-y-1 mb-2">
                                                             @foreach ($bulanData['list_pekerjaan'] as $job)
@@ -182,7 +184,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="14" class="py-8 text-center text-gray-500">
+                                        <td colspan="{{ count($months) + 2 }}" class="py-8 text-center text-gray-500">
                                             Belum ada data honor di tahun {{ $year }}.
                                         </td>
                                     </tr>
@@ -201,23 +203,23 @@
         document.addEventListener('DOMContentLoaded', function() {
             const exportBtn = document.getElementById('exportBtn');
             const monthFilter = document.getElementById('monthFilter');
-            
+
             function updateExportUrl() {
                 const params = new URLSearchParams(window.location.search);
                 const month = monthFilter.value;
-                
+
                 if (month) {
                     params.set('month', month);
                 } else {
                     params.delete('month');
                 }
-                
+
                 exportBtn.href = "{{ route('mitra.rekap.export') }}?" + params.toString();
             }
-            
+
             // Update on page load
             updateExportUrl();
-            
+
             // Update when month changes
             monthFilter.addEventListener('change', updateExportUrl);
         });
