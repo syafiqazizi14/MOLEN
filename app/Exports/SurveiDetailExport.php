@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Carbon\Carbon;
 
 class SurveiDetailExport implements FromCollection, WithMapping, WithEvents, WithCustomStartCell
@@ -144,9 +145,12 @@ class SurveiDetailExport implements FromCollection, WithMapping, WithEvents, Wit
                     $sheet->getStyle('G' . $firstDataRow . ':H' . $lastDataRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
                 }
 
-                // 7. Auto-size semua kolom
-                foreach (range('A', $lastColumn) as $column) {
-                    $sheet->getColumnDimension($column)->setAutoSize(true);
+                // 7. Auto-size semua kolom (versi aman tanpa range)
+                $lastColumnIndex = Coordinate::columnIndexFromString($lastColumn);
+
+                for ($col = 1; $col <= $lastColumnIndex; $col++) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($col);
+                    $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
                 }
             },
         ];

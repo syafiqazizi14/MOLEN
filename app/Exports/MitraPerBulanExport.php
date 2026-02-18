@@ -151,16 +151,27 @@ class MitraPerBulanExport implements FromCollection, WithMapping, WithEvents
                 $sheet->getStyle('A' . $headerRow . ':' . $lastColumn . $headerRow)->applyFromArray($headerStyle);
                 $sheet->getRowDimension($headerRow)->setRowHeight(20);
 
-                // Format Kolom Honor (dimulai dari kolom 'D' sekarang)
-                $honorStartColumn = 'D';
-                for ($col = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::columnIndexFromString($honorStartColumn); $col <= count($this->headings); $col++) {
+                // ===============================
+                // FORMAT KOLOM HONOR (DINAMIS & AMAN)
+                // ===============================
+
+                // Kolom honor mulai dari kolom ke-4 (D)
+                $honorStartIndex = 4;
+                $lastColumnIndex = count($this->headings);
+
+                for ($col = $honorStartIndex; $col <= $lastColumnIndex; $col++) {
                     $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
-                    $sheet->getStyle($columnLetter)->getNumberFormat()->setFormatCode('#,##0');
+                    $sheet->getStyle($columnLetter)
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0');
                 }
 
-                // Auto-size semua kolom
-                foreach (range('A', $lastColumn) as $column) {
-                    $sheet->getColumnDimension($column)->setAutoSize(true);
+                // ===============================
+                // AUTO SIZE SEMUA KOLOM (AMAN TANPA range)
+                // ===============================
+                for ($col = 1; $col <= $lastColumnIndex; $col++) {
+                    $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+                    $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
                 }
             },
         ];

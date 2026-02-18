@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Events\BeforeSheet;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use App\Models\Survei;
 use Carbon\Carbon;
 
@@ -151,9 +152,12 @@ class SurveiExport implements FromQuery, WithMapping, WithEvents
                     'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
                 ]);
 
-                // Set kolom auto-size
-                foreach (range('A', 'K') as $column) {
-                    $sheet->getColumnDimension($column)->setAutoSize(true);
+                // Set kolom auto-size (versi aman tanpa range)
+                $lastColumnIndex = count($this->headings);
+
+                for ($col = 1; $col <= $lastColumnIndex; $col++) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($col);
+                    $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
                 }
             },
         ];

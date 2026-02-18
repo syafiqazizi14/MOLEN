@@ -40,7 +40,7 @@
         <tr>
             @foreach ($uniqueSurveys as $surveyName)
                 <th colspan="4" style="border: 1px solid #000000; text-align: left;">
-                    Jadwal Keg: {{ $surveyDetailMap[$surveyName]['jadwal_kegiatan'] ?? '-' }} s/d {{ $surveyDetailMap[$surveyName]['jadwal_berakhir'] ?? '-' }}
+                    Jadwal Keg: {{ $surveyDetailMap[$surveyName]['jadwal_kegiatan'] ?? '-' }}
                 </th>
             @endforeach
         </tr>
@@ -79,8 +79,11 @@
             <tr>
                 <td style="border: 1px solid #000000; text-align: center;">{{ $loop->iteration }}</td>
                 <td style="border: 1px solid #000000;">{{ $mitra['nama'] }}</td>
-                <td style="border: 1px solid #000000; text-align: center; mso-number-format:'\@';">
-                    {{ $mitra['sobat_id'] }}</td>
+                <td style="border: 1px solid #000000; text-align: center;">
+                    {{ $mitra['sobat_id'] }}
+                </td>
+
+
                 {{-- [BARU] Tampilkan Kode Kec --}}
                 <td style="border: 1px solid #000000; text-align: center;">{{ $mitra['kode_kec'] }}</td>
 

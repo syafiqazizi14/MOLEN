@@ -170,117 +170,71 @@ class MitraExport implements FromCollection, WithMapping, WithEvents
     {
         return [
             BeforeSheet::class => function (BeforeSheet $event) {
+
                 $sheet = $event->sheet->getDelegate();
                 $row = 1;
 
-                // Tentukan kolom terakhir berdasarkan apakah filter bulan aktif atau tidak
-                $lastColumn = $this->isMonthFilterActive ? 'W' : 'U';
+                // Tentukan kolom terakhir berdasarkan jumlah heading
+                $lastColumnIndex = count($this->headings);
+                $lastColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($lastColumnIndex);
 
-                // Judul Laporan
+                // ===============================
+                // JUDUL
+                // ===============================
                 $sheet->setCellValue('A' . $row, 'LAPORAN DATA MITRA');
                 $sheet->mergeCells('A' . $row . ':' . $lastColumn . $row);
                 $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
                 $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                $row += 2; // Beri spasi
+                $row += 2;
 
-                // Tanggal Export
+                // ===============================
+                // TANGGAL EXPORT
+                // ===============================
                 $sheet->setCellValue('A' . $row, 'Tanggal Export: ' . Carbon::now()->format('d/m/Y H:i'));
                 $sheet->mergeCells('A' . $row . ':' . $lastColumn . $row);
                 $sheet->getStyle('A' . $row)->getFont()->setItalic(true);
-                $row += 2; // Beri spasi
+                $row += 2;
 
-                // Informasi Filter
-                if (!empty($this->filters)) {
-                    $sheet->setCellValue('A' . $row, 'Filter yang digunakan:');
-                    $sheet->mergeCells('A' . $row . ':' . $lastColumn . $row);
-                    $sheet->getStyle('A' . $row)->getFont()->setBold(true);
-                    $row++;
-
-                    foreach ($this->filters as $key => $value) {
-                        $label = $this->getFilterLabel($key);
-                        $displayValue = $value;
-
-                        // Logika untuk memastikan nama bulan selalu dalam Bahasa Indonesia
-                        // Menggunakan strtolower untuk perbandingan case-insensitive
-                        if (in_array(strtolower($key), ['bulan', 'Bulan'])) {
-                            Carbon::setLocale('id'); // Atur lokal ke Indonesia
-                            // Buat objek Carbon dari nomor bulan (contoh: '06') atau nama bulan
-                            if (is_numeric($value)) {
-                                // Jika nilainya angka (misal: '2'), ubah menjadi nama bulan ("Februari")
-                                $displayValue = Carbon::create()->month($value)->translatedFormat('F');
-                            } else {
-                                // Jika nilainya sudah berupa nama bulan (misal: "Februari"), langsung gunakan.
-                                // ucfirst memastikan huruf pertama kapital.
-                                $displayValue = ucfirst($value);
-                            }
-                        }
-
-                        $sheet->setCellValue('A' . $row, $label . ': ' . $displayValue);
-                        $sheet->mergeCells('A' . $row . ':' . $lastColumn . $row);
-                        $row++;
-                    }
-                    $row++; // Beri spasi
-                }
-
-                // Ringkasan Total
-                $summaryStartRow = $row;
-                $sheet->setCellValue('A' . $row++, 'Total Mitra: ' . $this->totals['totalMitra']);
-                $sheet->setCellValue('A' . $row++, 'Total Mitra Laki-laki: ' . $this->totals['totalLaki']);
-                $sheet->setCellValue('A' . $row++, 'Total Mitra Perempuan: ' . $this->totals['totalPerempuan']);
-                $sheet->setCellValue('A' . $row++, 'Mitra Sudah Mengikuti Survei: ' . $this->totals['totalIkutSurvei']);
-                $sheet->setCellValue('A' . $row++, 'Mitra Tidak Mengikuti Survei: ' . $this->totals['totalTidakIkutSurvei']);
-                $sheet->setCellValue('A' . $row++, 'Bisa Ikut Survei: ' . $this->totals['totalBisaIkutSurvei']);
-                $sheet->setCellValue('A' . $row++, 'Tidak Bisa Ikut Survei: ' . $this->totals['totalTidakBisaIkutSurvei']);
-
-                if ($this->isMonthFilterActive) {
-                    $sheet->setCellValue('A' . $row++, 'Total Mitra Partisipasi > 1 Survei: ' . ($this->totals['totalMitraLebihDariSatuSurvei'] ?? 0));
-                    $sheet->setCellValue('A' . $row++, 'Total Mitra Honor > 4 Juta: ' . ($this->totals['totalMitraHonorLebihDari4Jt'] ?? 0));
-                }
-
-                $sheet->setCellValue('A' . $row++, 'Total Honor: ' . number_format($this->totals['totalHonor'], 0, ',', '.'));
-                $sheet->getStyle('A' . $summaryStartRow . ':A' . ($row - 1))->getFont()->setBold(true);
-                $row += 2; // Beri spasi
-
-                // Header Tabel
+                // ===============================
+                // HEADER TABEL
+                // ===============================
                 $headerRow = $row;
                 $sheet->fromArray($this->headings, null, 'A' . $headerRow);
 
                 $headerStyle = [
                     'font' => ['bold' => true],
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFD3D3D3']],
-                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
-                    'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
+                    'fill' => [
+                        'fillType' => Fill::FILL_SOLID,
+                        'startColor' => ['argb' => 'FFD3D3D3']
+                    ],
+                    'borders' => [
+                        'allBorders' => ['borderStyle' => Border::BORDER_THIN]
+                    ],
+                    'alignment' => [
+                        'vertical' => Alignment::VERTICAL_CENTER
+                    ],
                 ];
-                $sheet->getStyle('A' . $headerRow . ':' . $lastColumn . $headerRow)->applyFromArray($headerStyle);
-                $sheet->getRowDimension($headerRow)->setRowHeight(20);
 
-                // Format Kolom Honor
+                $sheet->getStyle('A' . $headerRow . ':' . $lastColumn . $headerRow)
+                    ->applyFromArray($headerStyle);
+
+                // ===============================
+                // FORMAT KOLOM HONOR
+                // ===============================
                 $honorColumnIndex = array_search('Total Honor', $this->headings);
                 if ($honorColumnIndex !== false) {
                     $honorColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($honorColumnIndex + 1);
-                    $sheet->getStyle($honorColumn)->getNumberFormat()->setFormatCode('#,##0');
+                    $sheet->getStyle($honorColumn)
+                        ->getNumberFormat()
+                        ->setFormatCode('#,##0');
                 }
 
-                $skorKinerjaColumnIndex = array_search('Skor Kinerja (%)', $this->headings);
-                if ($skorKinerjaColumnIndex !== false) {
-                    $skorKinerjaColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($skorKinerjaColumnIndex + 1);
-                    // Terapkan format persentase dengan 1 angka desimal.
-                    // Excel akan secara otomatis menangani pemisah desimal (koma atau titik) berdasarkan pengaturan lokal pengguna.
-                    $sheet->getStyle($skorKinerjaColumn)->getNumberFormat()->setFormatCode('0.0%');
-                }
-
-                if ($this->isMonthFilterActive) {
-                    $catatanColumnIndex = array_search('Catatan', $this->headings);
-                    if ($catatanColumnIndex !== false) {
-                        $catatanColumn = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($catatanColumnIndex + 1);
-                        // Terapkan format text ke seluruh kolom 'Catatan'
-                        $sheet->getStyle($catatanColumn)->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
-                    }
-                }
-
-                // Auto-size semua kolom
-                foreach (range('A', $lastColumn) as $column) {
-                    $sheet->getColumnDimension($column)->setAutoSize(true);
+                // ===============================
+                // AUTO SIZE (VERSI AMAN TANPA range)
+                // ===============================
+                for ($col = 1; $col <= $lastColumnIndex; $col++) {
+                    $columnLetter = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($col);
+                    $sheet->getColumnDimension($columnLetter)->setAutoSize(true);
                 }
             },
         ];

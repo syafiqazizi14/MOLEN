@@ -7,12 +7,16 @@ use App\Models\Rate;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-// Pastikan use ini ada
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use Carbon\Carbon;
 
-// [PERUBAHAN 1] Tambahkan ', WithColumnFormatting' di baris ini
-class RekapHonorExport implements FromView, ShouldAutoSize, WithColumnFormatting
+class RekapHonorExport implements FromView, ShouldAutoSize, WithColumnFormatting, WithEvents
 {
     protected $bulan;
     protected $tahun;
@@ -21,37 +25,22 @@ class RekapHonorExport implements FromView, ShouldAutoSize, WithColumnFormatting
 
     public function __construct($bulan, $tahun, $team_id, $search = null)
     {
-        // Ensure tahun is always integer
         $this->tahun = (int) $tahun;
-        
-        // Cast bulan to integer if provided
         $this->bulan = !empty($bulan) ? (int) $bulan : null;
-        
         $this->team_id = $team_id;
         $this->search = $search;
     }
 
     public function view(): View
     {
-        // ... (Kode query dan logika penyusunan data SAMA PERSIS seperti sebelumnya) ...
-        // ... Tidak ada perubahan di bagian query ini ...
-
         $query = Placement::with(['mitra', 'team'])
             ->whereRaw('CAST(year AS UNSIGNED) = ?', [$this->tahun]);
 
-        if ($this->bulan) {
-            $query->where('month', $this->bulan);
-        }
-
-        if ($this->team_id != 'all' && $this->team_id != null) {
-            $query->where('team_id', $this->team_id);
-        }
-
+        if ($this->bulan) $query->where('month', $this->bulan);
+        if ($this->team_id != 'all' && $this->team_id != null) $query->where('team_id', $this->team_id);
         if ($this->search) {
             $search = $this->search;
-            $query->whereHas('mitra', function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%");
-            });
+            $query->whereHas('mitra', fn($q) => $q->where('nama_lengkap', 'like', "%{$search}%"));
         }
 
         $placements = $query->orderBy('mitra_id')->get();
@@ -61,85 +50,82 @@ class RekapHonorExport implements FromView, ShouldAutoSize, WithColumnFormatting
             $rateMap[$r->survey_name][$r->month] = $r->cost;
         }
 
-        // Ambil data survei untuk KRO dan Jadwal dengan mapping fleksibel
         $surveiData = \App\Models\Survei::all();
         $surveyDetailMap = [];
         $surveyDetailMapNormalized = [];
-        
+
         foreach ($surveiData as $s) {
+            Carbon::setLocale('id');
+            $jadwalFormatted = '-';
+            if ($s->jadwal_kegiatan && $s->jadwal_berakhir_kegiatan) {
+                $start = Carbon::parse($s->jadwal_kegiatan);
+                $end = Carbon::parse($s->jadwal_berakhir_kegiatan);
+
+                if ($start->month == $end->month && $start->year == $end->year) {
+                    $jadwalFormatted =
+                        $start->day . '-' . $end->day . ' ' .
+                        $start->translatedFormat('F Y');
+                } else {
+                    $jadwalFormatted =
+                        $start->day . ' ' . $start->translatedFormat('F Y') .
+                        ' - ' .
+                        $end->day . ' ' . $end->translatedFormat('F Y');
+                }
+            }
+
             $detail = [
                 'kro' => $s->kro ?? '-',
-                'jadwal_kegiatan' => $s->jadwal_kegiatan ? date('d/m/Y', strtotime($s->jadwal_kegiatan)) : '-',
-                'jadwal_berakhir' => $s->jadwal_berakhir_kegiatan ? date('d/m/Y', strtotime($s->jadwal_berakhir_kegiatan)) : '-',
+                'jadwal_kegiatan' => $jadwalFormatted,
+                'jadwal_berakhir' => '',
             ];
-            
-            // Mapping exact (original)
+
             $surveyDetailMap[$s->nama_survei] = $detail;
-            
-            // Mapping normalized (lowercase, trim) untuk fallback
-            $normalizedName = strtolower(trim($s->nama_survei));
-            $surveyDetailMapNormalized[$normalizedName] = $detail;
+            $surveyDetailMapNormalized[strtolower(trim($s->nama_survei))] = $detail;
         }
-        
-        // Helper function untuk mencari detail survei dengan fleksibel
-        $getSurveyDetail = function($surveyName) use ($surveyDetailMap, $surveyDetailMapNormalized, $surveiData) {
-            // 1. Coba exact match
-            if (isset($surveyDetailMap[$surveyName])) {
-                return $surveyDetailMap[$surveyName];
-            }
-            
-            // 2. Coba normalized match (case-insensitive)
+
+        $getSurveyDetail = function ($surveyName) use ($surveyDetailMap, $surveyDetailMapNormalized, $surveiData) {
+            if (isset($surveyDetailMap[$surveyName])) return $surveyDetailMap[$surveyName];
             $normalized = strtolower(trim($surveyName));
-            if (isset($surveyDetailMapNormalized[$normalized])) {
-                return $surveyDetailMapNormalized[$normalized];
-            }
-            
-            // 3. Coba partial match (LIKE)
+            if (isset($surveyDetailMapNormalized[$normalized])) return $surveyDetailMapNormalized[$normalized];
+
             foreach ($surveiData as $s) {
                 if (stripos($s->nama_survei, $surveyName) !== false || stripos($surveyName, $s->nama_survei) !== false) {
+                    Carbon::setLocale('id');
+                    $jadwalFormatted = '-';
+                    if ($s->jadwal_kegiatan && $s->jadwal_berakhir_kegiatan) {
+                        $start = Carbon::parse($s->jadwal_kegiatan);
+                        $end = Carbon::parse($s->jadwal_berakhir_kegiatan);
+                        $jadwalFormatted = ($start->year == $end->year)
+                            ? (($start->month == $end->month)
+                                ? $start->day . '-' . $end->day . ' ' . $start->translatedFormat('F Y')
+                                : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y'))
+                            : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y');
+                    }
                     return [
                         'kro' => $s->kro ?? '-',
-                        'jadwal_kegiatan' => $s->jadwal_kegiatan ? date('d/m/Y', strtotime($s->jadwal_kegiatan)) : '-',
-                        'jadwal_berakhir' => $s->jadwal_berakhir_kegiatan ? date('d/m/Y', strtotime($s->jadwal_berakhir_kegiatan)) : '-',
+                        'jadwal_kegiatan' => $jadwalFormatted,
+                        'jadwal_berakhir' => '',
                     ];
                 }
             }
-            
-            // 4. Default jika tidak ditemukan
-            return [
-                'kro' => '-',
-                'jadwal_kegiatan' => '-',
-                'jadwal_berakhir' => '-',
-            ];
+
+            return ['kro' => '-', 'jadwal_kegiatan' => '-', 'jadwal_berakhir' => '-'];
         };
 
         $uniqueSurveys = [];
         $surveyTeamMap = [];
-        $surveyDetailMapFinal = []; // Map final untuk dikirim ke view
+        $surveyDetailMapFinal = [];
         $rekapMitra = [];
 
         foreach ($placements as $p) {
             $teamName = $p->team->name ?? '-';
-            if ($p->survey_1) {
-                $uniqueSurveys[$p->survey_1] = $p->survey_1;
-                $surveyTeamMap[$p->survey_1] = $teamName;
-                // Resolve detail survei dengan fungsi fleksibel
-                if (!isset($surveyDetailMapFinal[$p->survey_1])) {
-                    $surveyDetailMapFinal[$p->survey_1] = $getSurveyDetail($p->survey_1);
-                }
-            }
-            if ($p->survey_2) {
-                $uniqueSurveys[$p->survey_2] = $p->survey_2;
-                $surveyTeamMap[$p->survey_2] = $teamName;
-                if (!isset($surveyDetailMapFinal[$p->survey_2])) {
-                    $surveyDetailMapFinal[$p->survey_2] = $getSurveyDetail($p->survey_2);
-                }
-            }
-            if ($p->survey_3) {
-                $uniqueSurveys[$p->survey_3] = $p->survey_3;
-                $surveyTeamMap[$p->survey_3] = $teamName;
-                if (!isset($surveyDetailMapFinal[$p->survey_3])) {
-                    $surveyDetailMapFinal[$p->survey_3] = $getSurveyDetail($p->survey_3);
+            foreach (['survey_1', 'survey_2', 'survey_3'] as $sField) {
+                if ($p->$sField) {
+                    $uniqueSurveys[$p->$sField] = $p->$sField;
+                    $surveyTeamMap[$p->$sField] = $teamName;
+                    if (!isset($surveyDetailMapFinal[$p->$sField])) {
+                        $surveyDetailMapFinal[$p->$sField] = $getSurveyDetail($p->$sField);
+                    }
                 }
             }
 
@@ -147,7 +133,7 @@ class RekapHonorExport implements FromView, ShouldAutoSize, WithColumnFormatting
             if (!isset($rekapMitra[$mid])) {
                 $rekapMitra[$mid] = [
                     'nama' => $p->mitra->nama_lengkap ?? '-',
-                    'sobat_id' => $p->mitra->sobat_id ?? '-',
+                    'sobat_id' => (string) $p->mitra->sobat_id, // PAKSA STRING
                     'kode_kec' => $p->mitra->kode_kec ?? $p->mitra->id_kecamatan ?? '-',
                     'surveys_data' => [],
                     'grand_total' => 0
@@ -187,11 +173,127 @@ class RekapHonorExport implements FromView, ShouldAutoSize, WithColumnFormatting
         ]);
     }
 
-    // [PERUBAHAN 2] Fungsi ini WAJIB ada untuk mengatasi masalah E+11
     public function columnFormats(): array
     {
         return [
-            'C' => NumberFormat::FORMAT_TEXT, // Paksa Kolom C (SOBAT ID) jadi Text
+            'C' => NumberFormat::FORMAT_TEXT, // Paksa Sobat ID jadi Text
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $highestRow = $sheet->getHighestRow();
+                $highestColumn = $sheet->getHighestColumn();
+                $highestColumnIndex = Coordinate::columnIndexFromString($highestColumn);
+
+                $headerRow = 1;
+                $teamBlocks = [];
+
+                // 1️⃣ DETEKSI BLOK TIM
+                for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($col);
+                    $cellValue = $sheet->getCell($columnLetter . $headerRow)->getValue();
+                    if ($cellValue && str_contains($cellValue, 'Tim:')) {
+                        $teamName = trim(str_replace('Tim:', '', $cellValue));
+                        $teamBlocks[] = [
+                            'colIndex' => $col,
+                            'teamName' => $teamName
+                        ];
+                    }
+                }
+
+                // 2️⃣ WARNA BLOK TIM
+                $colors = [
+                    'E2F0D9',
+                    'D9E1F2',
+                    'FCE4D6',
+                    'FFF2CC',
+                    'EAD1DC',
+                    'D0E0E3',
+                    'F4CCCC',
+                    'CFE2F3',
+                    'D9D2E9',
+                    'F9CB9C',
+                    'B6D7A8',
+                    'A2C4C9',
+                    'FFE599',
+                    'B4A7D6',
+                    'EA9999',
+                    'A4C2F4',
+                    'C9DAF8',
+                    'F6B26B',
+                    'D5A6BD',
+                    '76A5AF',
+                    '93C47D',
+                    'FFD966',
+                    '8E7CC3',
+                    'E06666',
+                    '6FA8DC',
+                    'CCCCCC',
+                    'D5E8D4',
+                    'F8CECC',
+                    'DAE8FC',
+                    'FCE5CD',
+                    'EAD1DC',
+                    'CFE2F3',
+                    'D9EAD3',
+                    'FFF2CC',
+                    'F4CCCC'
+                ];
+                $teamColorMap = [];
+                $colorIndex = 0;
+
+                foreach ($teamBlocks as $index => $block) {
+                    $startColIndex = $block['colIndex'];
+                    $teamName = $block['teamName'];
+                    $endColIndex = $highestColumnIndex;
+                    if (isset($teamBlocks[$index + 1])) {
+                        $endColIndex = $teamBlocks[$index + 1]['colIndex'] - 1;
+                    }
+                    $startColumn = Coordinate::stringFromColumnIndex($startColIndex);
+                    $endColumn = Coordinate::stringFromColumnIndex($endColIndex);
+                    $range = $startColumn . '1:' . $endColumn . $highestRow;
+
+                    if (!isset($teamColorMap[$teamName])) {
+                        $teamColorMap[$teamName] = $colors[$colorIndex % count($colors)];
+                        $colorIndex++;
+                    }
+
+                    $sheet->getStyle($range)->applyFromArray([
+                        'fill' => [
+                            'fillType' => Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => $teamColorMap[$teamName]],
+                        ],
+                    ]);
+                }
+
+                // 3️⃣ PAKSA TOTAL BULANAN PUTIH
+                for ($col = 1; $col <= $highestColumnIndex; $col++) {
+                    $columnLetter = Coordinate::stringFromColumnIndex($col);
+                    $cellValue = $sheet->getCell($columnLetter . $headerRow)->getValue();
+                    if ($cellValue && str_contains(strtolower($cellValue), 'total bulanan')) {
+                        $range = $columnLetter . '1:' . $columnLetter . $highestRow;
+                        $sheet->getStyle($range)->applyFromArray([
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'FFFFFF'],
+                            ],
+                        ]);
+                    }
+                }
+
+                // 4️⃣ PAKSA SOBAT ID JADI STRING MURNI
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $sheet->getCell('C' . $row)
+                        ->setValueExplicit(
+                            $sheet->getCell('C' . $row)->getValue(),
+                            DataType::TYPE_STRING
+                        );
+                }
+            },
         ];
     }
 }
