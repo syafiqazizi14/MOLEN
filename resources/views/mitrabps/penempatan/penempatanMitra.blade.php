@@ -74,14 +74,14 @@
                         {{-- TOMBOL KELOLA SURVEI (KHUSUS KETUA TIM) --}}
                         @if (Auth::user()->team_id && !Auth::user()->is_mitra_admin)
                             <button onclick="openSurveyModal()"
-                                class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded shadow flex items-center gap-2 text-sm transition duration-200">
+                                class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 text-sm transition duration-200">
                                 <i class="bi bi-list-check"></i> Kelola Survei
                             </button>
                         @endif
 
                         @if (auth()->user()->is_mitra_admin == 1 || auth()->user()->team_id == 6)
                             <a href="{{ route('mitra.status.form') }}"
-                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow mr-2">
+                                class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow transition duration-200">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -94,7 +94,7 @@
                         {{-- TOMBOL TAMBAH MITRA --}}
                         @if (isset($canEdit) ? $canEdit : true)
                             <button type="button" onclick="openAssignModal()"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow flex items-center gap-2 transition duration-200 text-sm">
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 transition duration-200 text-sm">
                                 <i class="bi bi-person-plus-fill"></i> Tambah Mitra
                             </button>
                         @endif

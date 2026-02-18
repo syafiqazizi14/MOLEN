@@ -9,6 +9,7 @@
         position: sticky;
         top: 0;
         z-index: 10;
+        background-color: #f3f4f6;
     }
 
     /* Agar kolom nama tetap di kiri saat scroll ke samping */
@@ -16,14 +17,21 @@
         position: sticky;
         left: 0;
         z-index: 20;
-        background-color: #fff;
+        background-color: #ffffff !important;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     }
 
     .sticky-header-col {
         position: sticky;
         left: 0;
         z-index: 30;
-        background-color: #f3f4f6;
+        background-color: #f3f4f6 !important;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Pastikan hover tidak mengubah background sticky column */
+    tr:hover .sticky-col {
+        background-color: #f9fafb !important;
     }
 </style>
 @include('mitrabps.cuScroll')
@@ -40,22 +48,22 @@
                     <div class="flex gap-2">
                         @if (Auth::user()->team_id && !Auth::user()->is_mitra_admin)
                             <a href="{{ route('mitra.rates.index') }}"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow transition transform hover:scale-105">
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow transition duration-200">
                                 <i class="bi bi-gear-fill"></i> Atur Honor
                             </a>
                         @endif
                         <a href="{{ route('mitra.planning.index') }}"
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 text-sm">
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow transition duration-200">
                             <i class="bi bi-calendar-week"></i> Perencanaan
                         </a>
 
                         <a href="#" id="exportBtn"
-                            class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow inline-flex items-center">
-                            <i class="bi bi-file-earmark-excel me-2"></i> Export Excel
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow transition duration-200">
+                            <i class="bi bi-file-earmark-excel"></i> Export Excel
                         </a>
 
                         <a href="{{ route('mitra.penempatan.index') }}"
-                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2">
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow transition duration-200">
                             <i class="bi bi-arrow-left"></i> Kembali
                         </a>
                     </div>
@@ -68,7 +76,7 @@
                         <div class="flex items-center gap-2">
                             <label class="font-bold text-gray-700 text-sm">Tim:</label>
                             <select name="team_id" onchange="this.form.submit()"
-                                class="border p-2 rounded text-sm min-w-[200px] shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                class="bg-white border border-gray-300 px-4 py-2.5 rounded-lg text-sm min-w-[200px] shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 cursor-pointer">
                                 <option value="">Semua Tim</option>
                                 @foreach ($teams as $t)
                                     <option value="{{ $t->id }}" {{ $filterTeamId == $t->id ? 'selected' : '' }}>
@@ -81,7 +89,7 @@
                         <div class="flex items-center gap-2">
                             <label class="font-bold text-gray-700 text-sm">Tahun:</label>
                             <select name="year" onchange="this.form.submit()"
-                                class="border p-2 rounded text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                class="bg-white border border-gray-300 px-4 py-2.5 rounded-lg text-sm shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 cursor-pointer">
                                 @foreach (range(2023, 2030) as $y)
                                     <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
                                         {{ $y }}</option>
@@ -92,7 +100,7 @@
                         <div class="flex items-center gap-2">
                             <label class="font-bold text-gray-700 text-sm">Bulan Export:</label>
                             <select name="month" id="monthFilter" onchange="this.form.submit()"
-                                class="border p-2 rounded text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                class="bg-white border border-gray-300 px-4 py-2.5 rounded-lg text-sm shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 cursor-pointer">
                                 <option value="">Semua Bulan (Tahunan)</option>
                                 @foreach (range(1, 12) as $m)
                                     <option value="{{ $m }}"
@@ -112,7 +120,7 @@
                             <thead class="bg-gray-100 text-gray-600 text-xs uppercase leading-normal">
                                 <tr>
                                     <th
-                                        class="py-3 px-4 text-left border-b border-r sticky-header-col shadow-sm min-w-[200px]">
+                                        class="py-3 px-4 text-left border-b border-r sticky-header-col min-w-[200px]">
                                         Nama Mitra
                                     </th>
                                     @foreach ($months as $m)
@@ -129,7 +137,7 @@
                                 @forelse($rekapMitra as $mitra)
                                     <tr class="border-b hover:bg-gray-50 transition duration-150">
 
-                                        <td class="py-3 px-4 text-left border-r sticky-col align-top shadow-sm">
+                                        <td class="py-3 px-4 text-left border-r sticky-col align-top">
                                             <div class="text-sm">
                                                 <a href="{{ route('mitra.rekap.show', $mitra['id']) }}?year={{ $year }}"
                                                     class="font-bold text-gray-900 hover:text-blue-900 hover:underline"

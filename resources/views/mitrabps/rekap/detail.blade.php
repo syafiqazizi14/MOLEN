@@ -19,7 +19,7 @@
                     </div>
                     <div class="flex gap-2 items-center">
                         <form method="GET" class="mr-4">
-                            <select name="year" onchange="this.form.submit()" class="border p-2 rounded shadow-sm">
+                            <select name="year" onchange="this.form.submit()" class="bg-white border border-gray-300 px-4 py-2.5 rounded-lg text-sm shadow-sm hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 cursor-pointer">
                                 @foreach (range(2023, 2030) as $y)
                                     <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>
                                         {{ $y }}</option>
