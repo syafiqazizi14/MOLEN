@@ -695,8 +695,14 @@
                 const list = Array.isArray(surveys) ? surveys : Object.keys(surveys);
                 list.forEach(s => {
                     let opt = document.createElement('option');
-                    opt.value = s;
-                    opt.innerHTML = s;
+                    // Handle both old (string) and new (array) format
+                    if (typeof s === 'string') {
+                        opt.value = s;
+                        opt.innerHTML = s;
+                    } else if (s && s.name) {
+                        opt.value = s.name;
+                        opt.innerHTML = s.name + (s.kro ? ' [' + s.kro + ']' : '');
+                    }
                     surveySelect.appendChild(opt);
                 });
             }

@@ -510,8 +510,14 @@
                 list.forEach(s => {
                     selects.forEach(id => {
                         let opt = document.createElement('option');
-                        opt.value = s;
-                        opt.innerHTML = s;
+                        // Handle both old (string) and new (array) format
+                        if (typeof s === 'string') {
+                            opt.value = s;
+                            opt.innerHTML = s;
+                        } else if (s && s.name) {
+                            opt.value = s.name;
+                            opt.innerHTML = s.name + (s.kro ? ' [' + s.kro + ']' : '');
+                        }
                         document.getElementById(id).appendChild(opt);
                     });
                 });
