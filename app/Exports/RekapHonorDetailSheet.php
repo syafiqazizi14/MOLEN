@@ -62,6 +62,25 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
             $rateMap[$r->survey_name][$r->month] = $r->cost;
         }
 
+        // Ambil Team Survey Maps (KRO dari Team.available_surveys)
+        $teamSurveyMaps = [];
+        $teams = \App\Models\Team::all();
+        foreach ($teams as $team) {
+            $surveys = $team->available_surveys ?? [];
+            // Handle backward compatibility
+            if (!empty($surveys) && is_string($surveys[0])) {
+                foreach ($surveys as $name) {
+                    $teamSurveyMaps[$name][$team->id] = ['kro' => ''];
+                }
+            } else {
+                foreach ($surveys as $survey) {
+                    if (is_array($survey)) {
+                        $teamSurveyMaps[$survey['name']][$team->id] = ['kro' => $survey['kro'] ?? ''];
+                    }
+                }
+            }
+        }
+
         $surveiData = \App\Models\Survei::all();
         $surveyDetailMap = [];
         $surveyDetailMapNormalized = [];
@@ -140,7 +159,14 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                     $uniqueSurveys[$p->$sField] = $p->$sField;
                     $surveyTeamMap[$p->$sField] = $teamName;
                     if (!isset($surveyDetailMapFinal[$p->$sField])) {
-                        $surveyDetailMapFinal[$p->$sField] = $getSurveyDetail($p->$sField);
+                        $detail = $getSurveyDetail($p->$sField);
+                        
+                        // Prioritas: Ambil KRO dari Team.available_surveys jika ada
+                        if (isset($teamSurveyMaps[$p->$sField][$p->team_id])) {
+                            $detail['kro'] = $teamSurveyMaps[$p->$sField][$p->team_id]['kro'] ?: $detail['kro'];
+                        }
+                        
+                        $surveyDetailMapFinal[$p->$sField] = $detail;
                     }
                 }
             }

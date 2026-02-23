@@ -488,6 +488,7 @@ Route::middleware('auth')->group(function () {
         ->name('mitra.recommendation.index');
 
     // Route Kelola Survei Tim
+    Route::get('/api/kro-list', [TeamSurveyController::class, 'getKroList'])->name('api.kro.list');
     Route::post('/mitra/surveys', [TeamSurveyController::class, 'store'])->name('team.surveys.store');
     // Ganti delete jadi post
     Route::post('/mitra/surveys/delete', [TeamSurveyController::class, 'destroy'])->name('team.surveys.destroy');
