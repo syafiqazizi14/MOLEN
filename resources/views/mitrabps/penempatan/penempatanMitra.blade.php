@@ -433,46 +433,54 @@
                 </div>
 
                 <div class="p-6">
-                    <form action="{{ route('team.surveys.store') }}" method="POST" class="mb-6">
+                    <form action="{{ route('team.surveys.store') }}" method="POST" class="mb-6 bg-gradient-to-br from-teal-50 to-cyan-50 p-4 rounded-lg border border-teal-200">
                         @csrf
-                        <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">Tambah Survei Baru</label>
-                        <div class="flex gap-2 mb-3">
-                            <input type="text" name="survey_name"
-                                class="flex-1 border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500"
-                                placeholder="Contoh: Susenas Maret" required>
-                        </div>
-                        <div class="flex gap-2 mb-3">
-                            <select name="kro" id="kro-dropdown"
-                                class="flex-1 border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500"
-                                placeholder="Pilih atau input KRO..." required>
-                                <option value="">-- Pilih KRO atau input baru --</option>
-                            </select>
-                        </div>
-                        <div class="mb-1 text-sm font-bold text-gray-700">Jadwal Kegiatan</div>
-                        <div class="grid grid-cols-2 gap-2 mb-3">
-                            <div class="flex flex-col">
-                                <label class="text-xs text-gray-600 mb-1">Mulai</label>
-                                <input type="date" name="tanggal_mulai"
-                                    class="border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500">
+                        <h6 class="text-sm font-bold text-teal-900 mb-4 pb-3 border-b border-teal-200">Tambah Survei Baru</h6>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Survei</label>
+                                <input type="text" name="survey_name"
+                                    class="w-full border border-gray-300 p-2.5 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                                    placeholder="Contoh: Susenas Maret" required>
                             </div>
-                            <div class="flex flex-col">
-                                <label class="text-xs text-gray-600 mb-1">Selesai</label>
-                                <input type="date" name="tanggal_selesai"
-                                    class="border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500">
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">KRO (Kode Responden)</label>
+                                <select name="kro" id="kro-dropdown"
+                                    class="w-full border border-gray-300 p-2.5 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                                    placeholder="Pilih atau input KRO..." required>
+                                    <option value="">-- Pilih KRO atau input baru --</option>
+                                </select>
+                            </div>
+
+                            <div class="pt-1">
+                                <label class="block text-xs font-semibold text-gray-700 mb-2.5">Jadwal Kegiatan</label>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-600 block mb-1">Tanggal Mulai</label>
+                                        <input type="date" name="tanggal_mulai"
+                                            class="w-full border border-gray-300 p-2 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent transition">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-600 block mb-1">Tanggal Selesai</label>
+                                        <input type="date" name="tanggal_selesai"
+                                            class="w-full border border-gray-300 p-2 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent transition">
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            <button type="submit"
-                                class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 text-sm font-bold whitespace-nowrap flex-1">
-                                TAMBAH
-                            </button>
-                        </div>
+
+                        <button type="submit"
+                            class="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white px-4 py-2.5 rounded-md text-sm font-bold transition duration-200 shadow-sm">
+                            Tambah Survei
+                        </button>
                     </form>
 
-                    <hr class="mb-4">
+                    <div class="border-t border-gray-200 my-6"></div>
 
-                    <h6 class="text-sm font-bold text-gray-700 mb-3">Survei Tersedia (Bisa Diedit):</h6>
-                    <div class="bg-gray-50 rounded border p-2 max-h-60 overflow-y-auto custom-scrollbar">
+                    <h6 class="text-sm font-bold text-gray-800 mb-4">Daftar Survei Tersedia</h6>
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 max-h-64 overflow-y-auto custom-scrollbar space-y-2">
                         @php
                             $myTeamSurveys = [];
                             if (Auth::user()->team_id) {
@@ -493,68 +501,95 @@
                         @endphp
 
                         @if (count($myTeamSurveys) > 0)
-                            <ul class="space-y-2">
-                                @foreach ($myTeamSurveys as $index => $s)
-                                    <li class="flex flex-col bg-white p-3 rounded shadow-sm border survey-item-{{ $index }}">
-                                        <!-- first line: survey name and kro separated by bar -->
-                                        <div class="survey-text-{{ $index }} flex items-center gap-2 mb-1">
-                                            <span class="font-semibold truncate">{{ $s['name'] }}</span>
-                                            <span class="text-gray-400">|</span>
-                                            <span class="truncate">{{ $s['kro'] ?? '' }}</span>
+                            @foreach ($myTeamSurveys as $index => $s)
+                                <div class="bg-white rounded-lg border border-gray-300 p-4 hover:shadow-md transition duration-200 survey-item-{{ $index }}">
+                                    <!-- View Mode -->
+                                    <div class="survey-text-{{ $index }}">
+                                        <div class="flex items-start justify-between mb-2">
+                                            <div class="flex-1">
+                                                <h4 class="font-semibold text-gray-900 text-sm">{{ $s['name'] }}</h4>
+                                            </div>
+                                            @if($s['kro'] ?? false)
+                                                <span class="ml-2 inline-block bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-1 rounded-full">{{ $s['kro'] }}</span>
+                                            @endif
                                         </div>
+                                        
+                                        @php
+                                            $tglMulaiFormatted = !empty($s['tanggal_mulai']) ? \Carbon\Carbon::parse($s['tanggal_mulai'])->format('d/m/Y') : '-';
+                                            $tglSelesaiFormatted = !empty($s['tanggal_selesai']) ? \Carbon\Carbon::parse($s['tanggal_selesai'])->format('d/m/Y') : '-';
+                                        @endphp
+                                        @if(!empty($s['tanggal_mulai']) || !empty($s['tanggal_selesai']))
+                                            <div class="schedule-display-{{ $index }} text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                                                <span class="text-gray-700 font-medium">Jadwal:</span> {{ $tglMulaiFormatted }} - {{ $tglSelesaiFormatted }}
+                                            </div>
+                                        @endif
+                                    </div>
 
-                                        <!-- editing inputs (hidden until edit mode) -->
-                                        <div class="survey-edit-{{ $index }} flex items-center gap-2 mb-1 hidden">
+                                    <!-- Edit Mode (Hidden) -->
+                                    <div class="survey-edit-{{ $index }} hidden space-y-3">
+                                        <div>
+                                            <label class="text-xs text-gray-600 font-semibold block mb-1">Nama Survei</label>
                                             <input type="text" id="survey-input-{{ $index }}"
                                                 value="{{ $s['name'] }}" data-original="{{ $s['name'] }}"
-                                                class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                                                 placeholder="Nama Survei" disabled
-                                                onkeydown="if(event.key === 'Enter') updateSurveyName('{{ $index }}')">
+                                                onkeydown="if(event.key === 'Enter') updateSurveyName('{{ $index }}')"/>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs text-gray-600 font-semibold block mb-1">KRO</label>
                                             <input type="text" id="kro-input-{{ $index }}"
                                                 value="{{ $s['kro'] ?? '' }}"
-                                                class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="KRO" disabled>
+                                                data-original="{{ $s['kro'] ?? '' }}"
+                                                class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                placeholder="KRO" disabled/>
                                         </div>
+                                        <div class="schedule-input-{{ $index }} grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="text-xs text-gray-600 font-semibold block mb-1">Mulai</label>
+                                                <input type="date" id="tgl-mulai-{{ $index }}"
+                                                    value="{{ $s['tanggal_mulai'] ?? '' }}"
+                                                    data-original="{{ $s['tanggal_mulai'] ?? '' }}"
+                                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                    disabled/>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs text-gray-600 font-semibold block mb-1">Selesai</label>
+                                                <input type="date" id="tgl-selesai-{{ $index }}"
+                                                    value="{{ $s['tanggal_selesai'] ?? '' }}"
+                                                    data-original="{{ $s['tanggal_selesai'] ?? '' }}"
+                                                    class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                                                    disabled/>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                        <div class="schedule-display-{{ $index }} text-xs text-gray-600">
-                                            {{ $s['tanggal_mulai'] ?? '-' }} - {{ $s['tanggal_selesai'] ?? '-' }}
-                                        </div>
-                                        <div class="schedule-input-{{ $index }} flex items-center gap-2 mt-1 hidden">
-                                            <input type="date" id="tgl-mulai-{{ $index }}"
-                                                value="{{ $s['tanggal_mulai'] ?? '' }}"
-                                                class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                                                disabled>
-                                            <input type="date" id="tgl-selesai-{{ $index }}"
-                                                value="{{ $s['tanggal_selesai'] ?? '' }}"
-                                                class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                                                disabled>
-                                        </div>
-                                        <div class="flex gap-2 mt-1">
-                                            <button id="btn-edit-{{ $index }}" onclick="toggleEditMode('{{ $index }}')"
-                                                class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-bold border border-blue-200">
-                                                Edit
+                                    <!-- Action Buttons -->
+                                    <div class="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+                                        <button type="button" id="btn-edit-{{ $index }}" onclick="toggleEditMode('{{ $index }}')"
+                                            class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-md text-xs font-semibold border border-blue-200 transition duration-200">
+                                            Edit
+                                        </button>
+                                        <button type="button" id="btn-save-{{ $index }}" onclick="updateSurveyName('{{ $index }}')" style="display: none;"
+                                            class="flex-1 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-md text-xs font-semibold border border-green-200 transition duration-200">
+                                            Simpan
+                                        </button>
+                                        <form id="form-hapus-{{ $loop->index }}"
+                                            action="{{ route('team.surveys.destroy') }}" method="POST" class="flex-1">
+                                            @csrf
+                                            <input type="hidden" name="survey_name" value="{{ $s['name'] }}">
+                                            <button type="button"
+                                                onclick="konfirmasiHapus('form-hapus-{{ $loop->index }}')"
+                                                class="w-full bg-red-50 hover:bg-red-100 text-red-700 px-3 py-2 rounded-md text-xs font-semibold border border-red-200 transition duration-200">
+                                                Hapus
                                             </button>
-                                            <button id="btn-save-{{ $index }}" onclick="updateSurveyName('{{ $index }}')" style="display: none;"
-                                                class="bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded text-xs font-bold border border-green-200">
-                                                Simpan
-                                            </button>
-                                            <form id="form-hapus-{{ $loop->index }}"
-                                                action="{{ route('team.surveys.destroy') }}" method="POST" class="flex">
-                                                @csrf
-                                                <input type="hidden" name="survey_name" value="{{ $s['name'] }}">
-
-                                                <button type="button"
-                                                    onclick="konfirmasiHapus('form-hapus-{{ $loop->index }}')"
-                                                    class="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">
-                                                    Hapus
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
+                                        </form>
+                                    </div>
+                                </div>
+                            @endforeach
                         @else
-                            <p class="text-xs text-gray-400 text-center py-4">Belum ada survei.</p>
+                            <div class="text-center py-6">
+                                <p class="text-sm text-gray-400">Belum ada survei. Tambahkan survei baru di atas.</p>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -876,11 +911,15 @@
             const newKro = kroInput.value;
             const newTglMulai = tglMulaiInput.value;
             const newTglSelesai = tglSelesaiInput.value;
+            const oldKro = kroInput.getAttribute('data-original') || '';
+            const oldTglMulai = tglMulaiInput.getAttribute('data-original') || '';
+            const oldTglSelesai = tglSelesaiInput.getAttribute('data-original') || '';
             const editBtn = document.getElementById('btn-edit-' + index);
             const saveBtn = document.getElementById('btn-save-' + index);
 
-            if (newName === oldName && newKro === kroInput.getAttribute('value')) {
-                return; // Tidak ada perubahan
+            if (newName === oldName && newKro === oldKro && newTglMulai === oldTglMulai && newTglSelesai === oldTglSelesai) {
+                Swal.fire('Info', 'Belum ada perubahan yang disimpan.', 'info');
+                return;
             }
 
             // UI Loading
@@ -911,6 +950,9 @@
                     if (data.status === 'success') {
                         // Update data-original agar sinkron jika mau edit lagi tanpa refresh
                         input.setAttribute('data-original', newName);
+                        kroInput.setAttribute('data-original', newKro);
+                        tglMulaiInput.setAttribute('data-original', newTglMulai);
+                        tglSelesaiInput.setAttribute('data-original', newTglSelesai);
 
                         // Feedback Visual (Border Hijau)
                         input.classList.add('border-green-500', 'ring-1', 'ring-green-500');
@@ -979,7 +1021,7 @@
             tglSelesaiInput.disabled = !isCurrentlyDisabled;
 
             if (!isCurrentlyDisabled) {
-                // Switching to view mode (disable)
+                // Switching to view mode (disable) - tutup edit panel
                 editBtn.style.display = 'block';
                 saveBtn.style.display = 'none';
                 // show display, hide inputs
@@ -988,7 +1030,7 @@
                 if (textDiv) textDiv.classList.remove('hidden');
                 if (editDiv) editDiv.classList.add('hidden');
             } else {
-                // Switching to edit mode (enable)
+                // Switching to edit mode (enable) - buka edit panel
                 editBtn.style.display = 'none';
                 saveBtn.style.display = 'block';
                 if (displayDiv) displayDiv.classList.add('hidden');
