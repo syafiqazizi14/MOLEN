@@ -62,7 +62,7 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
             $rateMap[$r->survey_name][$r->month] = $r->cost;
         }
 
-        // Ambil Team Survey Maps (KRO dari Team.available_surveys)
+        // Ambil Team Survey Maps (KRO dan Tanggal dari Team.available_surveys)
         $teamSurveyMaps = [];
         $teams = \App\Models\Team::all();
         foreach ($teams as $team) {
@@ -70,12 +70,20 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
             // Handle backward compatibility
             if (!empty($surveys) && is_string($surveys[0])) {
                 foreach ($surveys as $name) {
-                    $teamSurveyMaps[$name][$team->id] = ['kro' => ''];
+                    $teamSurveyMaps[$name][$team->id] = [
+                        'kro' => '',
+                        'tanggal_mulai' => null,
+                        'tanggal_selesai' => null
+                    ];
                 }
             } else {
                 foreach ($surveys as $survey) {
                     if (is_array($survey)) {
-                        $teamSurveyMaps[$survey['name']][$team->id] = ['kro' => $survey['kro'] ?? ''];
+                        $teamSurveyMaps[$survey['name']][$team->id] = [
+                            'kro' => $survey['kro'] ?? '',
+                            'tanggal_mulai' => $survey['tanggal_mulai'] ?? null,
+                            'tanggal_selesai' => $survey['tanggal_selesai'] ?? null
+                        ];
                     }
                 }
             }
@@ -161,9 +169,23 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                     if (!isset($surveyDetailMapFinal[$p->$sField])) {
                         $detail = $getSurveyDetail($p->$sField);
                         
-                        // Prioritas: Ambil KRO dari Team.available_surveys jika ada
+                        // Prioritas: Ambil KRO dan Tanggal dari Team.available_surveys jika ada
                         if (isset($teamSurveyMaps[$p->$sField][$p->team_id])) {
                             $detail['kro'] = $teamSurveyMaps[$p->$sField][$p->team_id]['kro'] ?: $detail['kro'];
+                            $tglMulai = $teamSurveyMaps[$p->$sField][$p->team_id]['tanggal_mulai'] ?? null;
+                            $tglSelesai = $teamSurveyMaps[$p->$sField][$p->team_id]['tanggal_selesai'] ?? null;
+                            
+                            // Format tanggal mulai - selesai untuk jadwal_kegiatan
+                            if ($tglMulai && $tglSelesai) {
+                                $start = Carbon::parse($tglMulai);
+                                $end = Carbon::parse($tglSelesai);
+                                $jadwalFormatted = ($start->year == $end->year)
+                                    ? (($start->month == $end->month)
+                                        ? $start->day . '-' . $end->day . ' ' . $start->translatedFormat('F Y')
+                                        : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y'))
+                                    : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y');
+                                $detail['jadwal_kegiatan'] = $jadwalFormatted;
+                            }
                         }
                         
                         $surveyDetailMapFinal[$p->$sField] = $detail;
@@ -189,7 +211,7 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                 ];
             }
 
-            $processSurvey = function ($name, $vol) use (&$rekapMitra, $mid, $rateMap, $p) {
+            $processSurvey = function ($name, $vol) use (&$rekapMitra, $mid, $rateMap, $p, $surveyDetailMapFinal) {
                 if (!$name || $vol <= 0) {
                     return;
                 }

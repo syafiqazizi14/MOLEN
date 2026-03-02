@@ -438,17 +438,32 @@
                         <label class="block text-gray-700 text-xs font-bold mb-2 uppercase">Tambah Survei Baru</label>
                         <div class="flex gap-2 mb-3">
                             <input type="text" name="survey_name"
-                                class="w-full border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500"
+                                class="flex-1 border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500"
                                 placeholder="Contoh: Susenas Maret" required>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 mb-3">
                             <select name="kro" id="kro-dropdown"
-                                class="w-full border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500"
+                                class="flex-1 border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500"
                                 placeholder="Pilih atau input KRO..." required>
                                 <option value="">-- Pilih KRO atau input baru --</option>
                             </select>
+                        </div>
+                        <div class="mb-1 text-sm font-bold text-gray-700">Jadwal Kegiatan</div>
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <div class="flex flex-col">
+                                <label class="text-xs text-gray-600 mb-1">Mulai</label>
+                                <input type="date" name="tanggal_mulai"
+                                    class="border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500">
+                            </div>
+                            <div class="flex flex-col">
+                                <label class="text-xs text-gray-600 mb-1">Selesai</label>
+                                <input type="date" name="tanggal_selesai"
+                                    class="border p-2 rounded text-sm focus:ring-teal-500 focus:border-teal-500">
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
                             <button type="submit"
-                                class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 text-sm font-bold whitespace-nowrap">
+                                class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 text-sm font-bold whitespace-nowrap flex-1">
                                 TAMBAH
                             </button>
                         </div>
@@ -465,44 +480,76 @@
                                 // Handle array/json manual agar aman
                                 $raw = $teamObj->available_surveys;
                                 $myTeamSurveys = is_string($raw) ? json_decode($raw, true) : $raw ?? [];
+                                
+                                // Handle backward compatibility: jika masih array string, convert ke format baru
+                                if (!empty($myTeamSurveys) && is_string($myTeamSurveys[0])) {
+                                    $oldSurveys = $myTeamSurveys;
+                                    $myTeamSurveys = [];
+                                    foreach ($oldSurveys as $name) {
+                                        $myTeamSurveys[] = ['name' => $name, 'kro' => ''];
+                                    }
+                                }
                             }
                         @endphp
 
                         @if (count($myTeamSurveys) > 0)
                             <ul class="space-y-2">
                                 @foreach ($myTeamSurveys as $index => $s)
-                                    <li class="flex items-center gap-2 bg-white p-2 rounded shadow-sm border flex-wrap">
+                                    <li class="flex flex-col bg-white p-3 rounded shadow-sm border survey-item-{{ $index }}">
+                                        <!-- first line: survey name and kro separated by bar -->
+                                        <div class="survey-text-{{ $index }} flex items-center gap-2 mb-1">
+                                            <span class="font-semibold truncate">{{ $s['name'] }}</span>
+                                            <span class="text-gray-400">|</span>
+                                            <span class="truncate">{{ $s['kro'] ?? '' }}</span>
+                                        </div>
 
-                                        <div class="flex-1 min-w-[200px]">
+                                        <!-- editing inputs (hidden until edit mode) -->
+                                        <div class="survey-edit-{{ $index }} flex items-center gap-2 mb-1 hidden">
                                             <input type="text" id="survey-input-{{ $index }}"
                                                 value="{{ $s['name'] }}" data-original="{{ $s['name'] }}"
-                                                class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                                                onkeydown="if(event.key === 'Enter') updateSurveyName('{{ $index }}')"
-                                                placeholder="Nama Survei">
-                                        </div>
-
-                                        <div class="flex-1 min-w-[150px]">
+                                                class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="Nama Survei" disabled
+                                                onkeydown="if(event.key === 'Enter') updateSurveyName('{{ $index }}')">
                                             <input type="text" id="kro-input-{{ $index }}"
                                                 value="{{ $s['kro'] ?? '' }}"
-                                                class="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="KRO">
+                                                class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="KRO" disabled>
                                         </div>
 
-                                        <button onclick="updateSurveyName('{{ $index }}')"
-                                            class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-bold border border-blue-200 whitespace-nowrap">
-                                            Simpan
-                                        </button>
-
-                                        <form id="form-hapus-{{ $loop->index }}"
-                                            action="{{ route('team.surveys.destroy') }}" method="POST"> @csrf
-                                            <input type="hidden" name="survey_name" value="{{ $s['name'] }}">
-
-                                            <button type="button"
-                                                onclick="konfirmasiHapus('form-hapus-{{ $loop->index }}')"
-                                                class="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">
-                                                Hapus
+                                        <div class="schedule-display-{{ $index }} text-xs text-gray-600">
+                                            {{ $s['tanggal_mulai'] ?? '-' }} - {{ $s['tanggal_selesai'] ?? '-' }}
+                                        </div>
+                                        <div class="schedule-input-{{ $index }} flex items-center gap-2 mt-1 hidden">
+                                            <input type="date" id="tgl-mulai-{{ $index }}"
+                                                value="{{ $s['tanggal_mulai'] ?? '' }}"
+                                                class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                disabled>
+                                            <input type="date" id="tgl-selesai-{{ $index }}"
+                                                value="{{ $s['tanggal_selesai'] ?? '' }}"
+                                                class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-blue-500 focus:border-blue-500"
+                                                disabled>
+                                        </div>
+                                        <div class="flex gap-2 mt-1">
+                                            <button id="btn-edit-{{ $index }}" onclick="toggleEditMode('{{ $index }}')"
+                                                class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-2 py-1 rounded text-xs font-bold border border-blue-200">
+                                                Edit
                                             </button>
-                                        </form>
+                                            <button id="btn-save-{{ $index }}" onclick="updateSurveyName('{{ $index }}')" style="display: none;"
+                                                class="bg-green-100 text-green-700 hover:bg-green-200 px-2 py-1 rounded text-xs font-bold border border-green-200">
+                                                Simpan
+                                            </button>
+                                            <form id="form-hapus-{{ $loop->index }}"
+                                                action="{{ route('team.surveys.destroy') }}" method="POST" class="flex">
+                                                @csrf
+                                                <input type="hidden" name="survey_name" value="{{ $s['name'] }}">
+
+                                                <button type="button"
+                                                    onclick="konfirmasiHapus('form-hapus-{{ $loop->index }}')"
+                                                    class="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">
+                                                    Hapus
+                                                </button>
+                                            </form>
+                                        </div>
                                     </li>
                                 @endforeach
                             </ul>
@@ -822,21 +869,27 @@
         function updateSurveyName(index) {
             const input = document.getElementById('survey-input-' + index);
             const kroInput = document.getElementById('kro-input-' + index);
+            const tglMulaiInput = document.getElementById('tgl-mulai-' + index);
+            const tglSelesaiInput = document.getElementById('tgl-selesai-' + index);
             const newName = input.value;
             const oldName = input.getAttribute('data-original');
             const newKro = kroInput.value;
-            const btn = input.parentElement.parentElement.querySelector('button[onclick*="updateSurveyName"]');
+            const newTglMulai = tglMulaiInput.value;
+            const newTglSelesai = tglSelesaiInput.value;
+            const editBtn = document.getElementById('btn-edit-' + index);
+            const saveBtn = document.getElementById('btn-save-' + index);
 
             if (newName === oldName && newKro === kroInput.getAttribute('value')) {
                 return; // Tidak ada perubahan
             }
 
             // UI Loading
-            const originalText = btn.innerText;
-            btn.innerText = '...';
+            saveBtn.innerText = '...';
             input.disabled = true;
             kroInput.disabled = true;
-            btn.disabled = true;
+            tglMulaiInput.disabled = true;
+            tglSelesaiInput.disabled = true;
+            saveBtn.disabled = true;
 
             fetch("{{ route('team.surveys.update') }}", {
                     method: 'POST',
@@ -848,16 +901,13 @@
                         _method: 'PUT',
                         old_name: oldName,
                         new_name: newName,
-                        kro: newKro
+                        kro: newKro,
+                        tanggal_mulai: newTglMulai || null,
+                        tanggal_selesai: newTglSelesai || null
                     })
                 })
                 .then(res => res.json())
                 .then(data => {
-                    btn.innerText = originalText;
-                    input.disabled = false;
-                    kroInput.disabled = false;
-                    btn.disabled = false;
-
                     if (data.status === 'success') {
                         // Update data-original agar sinkron jika mau edit lagi tanpa refresh
                         input.setAttribute('data-original', newName);
@@ -865,27 +915,88 @@
                         // Feedback Visual (Border Hijau)
                         input.classList.add('border-green-500', 'ring-1', 'ring-green-500');
                         kroInput.classList.add('border-green-500', 'ring-1', 'ring-green-500');
+                        tglMulaiInput.classList.add('border-green-500', 'ring-1', 'ring-green-500');
+                        tglSelesaiInput.classList.add('border-green-500', 'ring-1', 'ring-green-500');
 
                         Swal.fire({
                             icon: 'success',
                             title: 'Berhasil',
-                            text: 'Survei dan KRO berhasil diperbarui!',
+                            text: 'Survei, KRO, dan tanggal berhasil diperbarui!',
                             timer: 1000,
                             showConfirmButton: false
                         }).then(() => {
+                            // Disable fields dan toggle buttons kembali ke mode view
+                            input.disabled = true;
+                            kroInput.disabled = true;
+                            tglMulaiInput.disabled = true;
+                            tglSelesaiInput.disabled = true;
+                            
+                            editBtn.style.display = 'block';
+                            saveBtn.style.display = 'none';
+                            
                             location.reload();
                         });
                     } else {
+                        saveBtn.innerText = 'Simpan';
+                        input.disabled = false;
+                        kroInput.disabled = false;
+                        tglMulaiInput.disabled = false;
+                        tglSelesaiInput.disabled = false;
+                        saveBtn.disabled = false;
                         Swal.fire('Gagal', data.message || 'Terjadi kesalahan', 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    btn.innerText = originalText;
+                    saveBtn.innerText = 'Simpan';
                     input.disabled = false;
-                    btn.disabled = false;
+                    kroInput.disabled = false;
+                    tglMulaiInput.disabled = false;
+                    tglSelesaiInput.disabled = false;
+                    saveBtn.disabled = false;
                     Swal.fire('Error', 'Gagal menghubungi server', 'error');
                 });
+        }
+
+        function toggleEditMode(index) {
+            const input = document.getElementById('survey-input-' + index);
+            const kroInput = document.getElementById('kro-input-' + index);
+            const tglMulaiInput = document.getElementById('tgl-mulai-' + index);
+            const tglSelesaiInput = document.getElementById('tgl-selesai-' + index);
+            const editBtn = document.getElementById('btn-edit-' + index);
+            const saveBtn = document.getElementById('btn-save-' + index);
+            const displayDiv = document.querySelector('.schedule-display-' + index);
+            const inputDiv = document.querySelector('.schedule-input-' + index);
+            const textDiv = document.querySelector('.survey-text-' + index);
+            const editDiv = document.querySelector('.survey-edit-' + index);
+
+            // Toggle enabled/disabled
+            const isCurrentlyDisabled = input.disabled;
+            
+            input.disabled = !isCurrentlyDisabled;
+            kroInput.disabled = !isCurrentlyDisabled;
+            tglMulaiInput.disabled = !isCurrentlyDisabled;
+            tglSelesaiInput.disabled = !isCurrentlyDisabled;
+
+            if (!isCurrentlyDisabled) {
+                // Switching to view mode (disable)
+                editBtn.style.display = 'block';
+                saveBtn.style.display = 'none';
+                // show display, hide inputs
+                if (displayDiv) displayDiv.classList.remove('hidden');
+                if (inputDiv) inputDiv.classList.add('hidden');
+                if (textDiv) textDiv.classList.remove('hidden');
+                if (editDiv) editDiv.classList.add('hidden');
+            } else {
+                // Switching to edit mode (enable)
+                editBtn.style.display = 'none';
+                saveBtn.style.display = 'block';
+                if (displayDiv) displayDiv.classList.add('hidden');
+                if (inputDiv) inputDiv.classList.remove('hidden');
+                if (textDiv) textDiv.classList.add('hidden');
+                if (editDiv) editDiv.classList.remove('hidden');
+                input.focus();
+            }
         }
         
         function konfirmasiHapus(formId) {

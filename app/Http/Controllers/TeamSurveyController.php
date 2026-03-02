@@ -33,12 +33,14 @@ class TeamSurveyController extends Controller
         return response()->json($kroList);
     }
 
-    // Simpan Survei Baru (Updated untuk handle KRO)
+    // Simpan Survei Baru (Updated untuk handle KRO dan Tanggal)
     public function store(Request $request)
     {
         $request->validate([
             'survey_name' => 'required|string|max:255',
             'kro' => 'required|max:255',
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date',
         ]);
 
         $user = Auth::user();
@@ -58,7 +60,7 @@ class TeamSurveyController extends Controller
             $oldSurveys = $currentSurveys;
             $currentSurveys = [];
             foreach ($oldSurveys as $name) {
-                $currentSurveys[] = ['name' => $name, 'kro' => ''];
+                $currentSurveys[] = ['name' => $name, 'kro' => '', 'tanggal_mulai' => null, 'tanggal_selesai' => null];
             }
         }
 
@@ -68,10 +70,12 @@ class TeamSurveyController extends Controller
             return back()->with('error', 'Nama survei sudah ada.');
         }
 
-        // Tambah ke array dengan struktur baru
+        // Tambah ke array dengan struktur baru (include tanggal)
         $currentSurveys[] = [
             'name' => $request->survey_name,
-            'kro' => (string) $request->kro
+            'kro' => (string) $request->kro,
+            'tanggal_mulai' => $request->filled('tanggal_mulai') ? $request->tanggal_mulai : null,
+            'tanggal_selesai' => $request->filled('tanggal_selesai') ? $request->tanggal_selesai : null,
         ];
 
         // Simpan kembali
@@ -81,13 +85,15 @@ class TeamSurveyController extends Controller
         return back()->with('success', 'Survei berhasil ditambahkan!');
     }
 
-    // Update Survei (Updated untuk handle KRO)
+    // Update Survei (Updated untuk handle KRO dan Tanggal)
     public function update(Request $request)
     {
         $request->validate([
             'old_name' => 'required|string',
             'new_name' => 'required|string|max:255',
             'kro' => 'required|max:255',
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date',
         ]);
 
         $user = Auth::user();
@@ -109,7 +115,7 @@ class TeamSurveyController extends Controller
             $oldSurveys = $surveys;
             $surveys = [];
             foreach ($oldSurveys as $name) {
-                $surveys[] = ['name' => $name, 'kro' => ''];
+                $surveys[] = ['name' => $name, 'kro' => '', 'tanggal_mulai' => null, 'tanggal_selesai' => null];
             }
         }
 
@@ -120,6 +126,8 @@ class TeamSurveyController extends Controller
             // Update
             $surveys[$key]['name'] = $request->new_name;
             $surveys[$key]['kro'] = (string) $request->kro;
+            $surveys[$key]['tanggal_mulai'] = $request->filled('tanggal_mulai') ? $request->tanggal_mulai : null;
+            $surveys[$key]['tanggal_selesai'] = $request->filled('tanggal_selesai') ? $request->tanggal_selesai : null;
 
             $team->available_surveys = $surveys;
             $team->save();

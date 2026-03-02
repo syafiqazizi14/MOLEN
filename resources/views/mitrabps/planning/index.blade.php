@@ -1,4 +1,4 @@
-php@php $title = 'Perencanaan Survei Bulanan'; @endphp
+@php $title = 'Perencanaan Survei Bulanan'; @endphp
 @include('mitrabps.headerTemp')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.tailwindcss.com"></script>
