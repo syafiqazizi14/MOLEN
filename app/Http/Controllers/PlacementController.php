@@ -131,9 +131,9 @@ class PlacementController extends Controller
                         'survey_1' => $request->survey_1,
                         'vol_1'    => $request->vol_1 ?? 1,
                         'survey_2' => $request->filled('survey_2') ? $request->survey_2 : null,
-                        'vol_2'    => $request->filled('survey_2') ? ($request->input('vol_2', 0)) : 0,
+                        'vol_2'    => $request->filled('survey_2') ? ($request->input('vol_2', 1)) : 1,
                         'survey_3' => $request->filled('survey_3') ? $request->survey_3 : null,
-                        'vol_3'    => $request->filled('survey_3') ? ($request->input('vol_3', 0)) : 0,
+                        'vol_3'    => $request->filled('survey_3') ? ($request->input('vol_3', 1)) : 1,
                         'status_anggota' => $status
                     ]
                 );
@@ -172,9 +172,9 @@ class PlacementController extends Controller
                     'survey_1' => $request->survey_1,
                     'vol_1'    => $request->vol_1,
                     'survey_2' => $request->filled('survey_2') ? $request->survey_2 : null,
-                    'vol_2'    => $request->filled('survey_2') ? $request->vol_2 : 0,
+                    'vol_2'    => $request->filled('survey_2') ? ($request->input('vol_2', 1)) : 1,
                     'survey_3' => $request->filled('survey_3') ? $request->survey_3 : null,
-                    'vol_3'    => $request->filled('survey_3') ? $request->vol_3 : 0,
+                    'vol_3'    => $request->filled('survey_3') ? ($request->input('vol_3', 1)) : 1,
                 ]);
         
                 if ($request->expectsJson()) {

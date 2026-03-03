@@ -72,6 +72,12 @@ class SurveyPlanController extends Controller
         }
 
         $userTeamId = $user->team_id;
+        
+        // Cek apakah ada parameter edit_placement untuk auto-open edit modal
+        $editPlacement = null;
+        if ($request->has('edit_placement')) {
+            $editPlacement = Placement::with('mitra', 'team')->find($request->edit_placement);
+        }
 
         return view('mitrabps.planning.index', [
             'mitras' => $mitras,
@@ -82,7 +88,8 @@ class SurveyPlanController extends Controller
             'mitraLocks' => $mitraLocks,
             'userTeamId' => $userTeamId,
             'selectedTeam' => $filterTeamId,
-            'filterTeamId' => $filterTeamId
+            'filterTeamId' => $filterTeamId,
+            'editPlacement' => $editPlacement
         ]);
     }
 
@@ -91,19 +98,17 @@ class SurveyPlanController extends Controller
     // =========================================================================
     public function store(Request $request)
     {
-        // 1. Validasi Sesuai HTML Form Anda
         $request->validate([
             'mitra_id' => 'required',
+            'team_id'  => 'required',
             'month'    => 'required',
             'year'     => 'required',
-            'survey_1' => 'required', // Sesuai HTML select name="survey_1"
-            'vol_1'    => 'required|numeric|min:1', // Sesuai HTML input name="vol_1"
-            'force_save' => 'nullable|in:0,1', // Untuk flag simpan paksa
+            'survey_1' => 'required|string|max:255',
+            'vol_1'    => 'required|numeric|min:1',
+            'force_save' => 'nullable|in:0,1',
         ]);
 
         try {
-            // A. CARI HARGA (COST)
-            // [CEK NAMA TABEL] Pastikan nama tabel rates Anda benar (misal: 'rates', 'surveys', atau 'biaya')
             $rateData = DB::table('rates')
                 ->where('survey_name', $request->survey_1)
                 ->where('month', $request->month)
@@ -144,27 +149,41 @@ class SurveyPlanController extends Controller
                 ]);
             }
 
-            // D. SIMPAN DATA
-            // [PENTING] Pastikan model Placement punya 'survey_1' & 'vol_1' di $fillable
             Placement::updateOrCreate(
                 [
                     'mitra_id' => $request->mitra_id,
+                    'team_id'  => $request->team_id,
                     'month'    => $request->month,
                     'year'     => $request->year,
-                    'survey_1' => $request->survey_1,
                 ],
                 [
-                    'team_id' => Auth::user()->team_id ?? 1,
-                    'vol_1'   => $request->vol_1,
+                    'survey_1' => $request->survey_1,
+                    'vol_1'    => $request->vol_1,
+                    'survey_2' => $request->filled('survey_2') ? $request->survey_2 : null,
+                    'vol_2'    => $request->filled('survey_2') ? $request->input('vol_2', 1) : 1,
+                    'survey_3' => $request->filled('survey_3') ? $request->survey_3 : null,
+                    'vol_3'    => $request->filled('survey_3') ? $request->input('vol_3', 1) : 1,
                     'status_anggota' => 'Tetap',
                 ]
             );
 
-            return redirect()->back()->with('success', 'Data berhasil disimpan');
-        } catch (\Throwable $e) { // MENGGUNAKAN Throwable UNTUK MENANGKAP SEMUA ERROR
-            return redirect()->back()
-                ->with('error', 'Error Server (Baris ' . $e->getLine() . '): ' . $e->getMessage())
-                ->withInput(); // Tambahan: Agar isian form tidak hilang
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Data berhasil disimpan'
+                ]);
+            }
+
+            return back()->with('success', 'Data berhasil disimpan');
+        } catch (\Throwable $e) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Error Server: ' . $e->getMessage(),
+                ], 500);
+            }
+
+            return back()->with('error', 'Error Server: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -174,6 +193,7 @@ class SurveyPlanController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
+            'survey_1' => 'required|string|max:255',
             'vol_1' => 'required|numeric|min:1',
         ]);
 
@@ -221,7 +241,12 @@ class SurveyPlanController extends Controller
             }
 
             // D. UPDATE
+            $placement->survey_1 = $request->survey_1;
             $placement->vol_1 = $request->vol_1;
+            $placement->survey_2 = $request->filled('survey_2') ? $request->survey_2 : null;
+            $placement->vol_2 = $request->filled('survey_2') ? $request->input('vol_2', 1) : 1;
+            $placement->survey_3 = $request->filled('survey_3') ? $request->survey_3 : null;
+            $placement->vol_3 = $request->filled('survey_3') ? $request->input('vol_3', 1) : 1;
 
             if ($request->filled('team_id')) {
                 $placement->team_id = $request->team_id;

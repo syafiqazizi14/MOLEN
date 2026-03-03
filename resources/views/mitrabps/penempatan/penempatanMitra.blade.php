@@ -218,12 +218,12 @@
                                                 <div
                                                     class="flex flex-col gap-3 items-center justify-center h-full w-full">
                                                     @foreach ($m->placements as $p)
-                                                        <div class="h-6 flex items-center">
+                                                        <div class="flex items-center gap-2">
 
                                                             @php
-                                                                // LOGIKA HAK AKSES HAPUS
+                                                                // LOGIKA HAK AKSES EDIT/HAPUS
                                                                 // 1. Admin boleh segalanya
-                                                                // 2. Ketua Tim hanya boleh hapus jika ID Tim Tugas == ID Tim User
+                                                                // 2. Ketua Tim hanya boleh edit/hapus jika ID Tim Tugas == ID Tim User
                                                                 $user = Auth::user();
                                                                 $isMyTask =
                                                                     $user->is_mitra_admin == 1 ||
@@ -231,6 +231,21 @@
                                                             @endphp
 
                                                             @if ($isMyTask)
+                                                                {{-- TOMBOL EDIT --}}
+                                                                <a href="{{ route('mitra.planning.index', ['month' => $currentMonth, 'year' => $currentYear, 'edit_placement' => $p->id]) }}"
+                                                                    class="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition duration-200 shadow-sm flex items-center justify-center"
+                                                                    title="Edit tugas {{ $p->team->name }}">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                        class="h-4 w-4" fill="none"
+                                                                        viewBox="0 0 24 24" stroke="currentColor"
+                                                                        stroke-width="2">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round"
+                                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                    </svg>
+                                                                </a>
+
+                                                                {{-- TOMBOL HAPUS --}}
                                                                 <form action="{{ route('placement.destroy', $p->id) }}"
                                                                     method="POST">
                                                                     @csrf
@@ -394,18 +409,16 @@
                         <div id="lock-msg" class="hidden mt-2 p-2 rounded text-xs"></div>
                     </div>
 
-                    <div class="mb-4 bg-gray-50 p-3 rounded border">
-                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Survei Utama</label>
-                        <div class="flex gap-2">
-                            <select name="survey_1" id="modal-survey-1" class="w-3/4 border p-2 rounded text-sm"
-                                required>
-                                <option value="">-- Pilih Tim Dahulu --</option>
-                            </select>
-                            <input type="number" name="vol_1" value="1"
-                                class="w-1/4 border p-2 rounded text-sm text-center" placeholder="Vol"
-                                min="1">
-                        </div>
+                    <!-- SURVEI DINAMIS CONTAINER -->
+                    <div id="surveys-container" class="space-y-3 mb-4 max-h-64 overflow-y-auto border border-gray-200 rounded p-3 bg-white">
+                        <!-- Survey akan di-insert di sini -->
                     </div>
+
+                    <!-- TOMBOL TAMBAH SURVEI -->
+                    <button type="button" onclick="addSurveyField()" id="btn-add-survey"
+                        class="w-full mb-4 bg-green-50 hover:bg-green-100 text-green-700 border border-green-300 px-3 py-2 rounded-md text-sm font-semibold transition duration-200 flex items-center justify-center gap-2">
+                        <i class="bi bi-plus-circle"></i> Tambah Survei Tambahan
+                    </button>
 
                     <div class="flex justify-end gap-2 pt-2 border-t">
                         <button type="button" onclick="closeAssignModal()"
@@ -681,6 +694,20 @@
         function openAssignModal() {
             document.getElementById('assignModal').classList.remove('hidden');
 
+            // Reset form dan inisialisasi survei pertama
+            document.getElementById('assignment-form').reset();
+            
+            // Clear dan reset container survei
+            const container = document.getElementById('surveys-container');
+            container.innerHTML = '';
+            surveyFieldCount = 0;
+            
+            // Tambah satu survei kosong
+            addSurveyField();
+            
+            // Inisialisasi button state
+            updateAddSurveyButtonState();
+
             // Init TomSelect jika belum ada
             if (!tomSelectInstance) {
                 try {
@@ -708,6 +735,7 @@
                 if (teamSelect) {
                     teamSelect.value = userTeamId;
                     updateModalSurveys(); // Load survei langsung
+                    updateAllSurveySelects(); // Pastikan dropdowns di-update
                 }
             }
         }
@@ -759,35 +787,108 @@
         }
 
         // ==========================================
-        // 5. UPDATE TAMPILAN & PESAN WARNING
+        // 5. FUNGSI MANAJEMEN SURVEI DINAMIS
+        // ==========================================
+        let surveyFieldCount = 0;
+        
+        function addSurveyField() {
+            const container = document.getElementById('surveys-container');
+            const currentCount = document.querySelectorAll('.survey-field').length;
+            
+            // Validasi: maksimal 3 survei
+            if (currentCount >= 3) {
+                Swal.fire('Peringatan', 'Maksimal 3 survei untuk setiap mitra!', 'warning');
+                return;
+            }
+            
+            surveyFieldCount++;
+            const index = surveyFieldCount;
+            
+            const label = index === 1 ? 'Survei Utama' : `Survei Tambahan ${index - 1}`;
+            const required = index === 1 ? 'required' : '';
+            
+            const html = `
+                <div class="bg-gray-50 p-3 rounded border survey-field" id="survey-field-${index}">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase">${label}</label>
+                        ${index > 1 ? `<button type="button" onclick="removeSurveyField(${index})" class="text-red-500 hover:text-red-700 text-sm font-bold">Hapus</button>` : ''}
+                    </div>
+                    <div class="flex gap-2">
+                        <select name="survey_${index}" id="modal-survey-${index}" class="modal-survey-select w-3/4 border p-2 rounded text-sm" ${required}>
+                            <option value="">-- Pilih Tim Dahulu --</option>
+                        </select>
+                        <input type="number" name="vol_${index}" value="1"
+                            class="w-1/4 border p-2 rounded text-sm text-center" placeholder="Vol" min="1">
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', html);
+            
+            // Update survei buat field baru ini
+            updateAllSurveySelects();
+            
+            // Update status tombol
+            updateAddSurveyButtonState();
+        }
+        
+        function removeSurveyField(index) {
+            document.getElementById(`survey-field-${index}`).remove();
+            updateAddSurveyButtonState();
+        }
+        
+        function updateAddSurveyButtonState() {
+            const button = document.getElementById('btn-add-survey');
+            const currentCount = document.querySelectorAll('.survey-field').length;
+            
+            if (currentCount >= 3) {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+        
+        function updateAllSurveySelects() {
+            const teamId = parseInt(document.getElementById('modal-team-select').value);
+            const selects = document.querySelectorAll('.modal-survey-select');
+            
+            selects.forEach(select => {
+                select.innerHTML = '<option value="">-- Pilih Tim Dahulu --</option>';
+                
+                if (teamId && teamSurveys[teamId]) {
+                    const surveys = teamSurveys[teamId];
+                    const list = Array.isArray(surveys) ? surveys : Object.keys(surveys);
+                    list.forEach(s => {
+                        let opt = document.createElement('option');
+                        // Handle both old (string) and new (array) format
+                        if (typeof s === 'string') {
+                            opt.value = s;
+                            opt.innerHTML = s;
+                        } else if (s && s.name) {
+                            opt.value = s.name;
+                            opt.innerHTML = s.name + (s.kro ? ' [' + s.kro + ']' : '');
+                        }
+                        select.appendChild(opt);
+                    });
+                }
+            });
+        }
+
+        // ==========================================
+        // 6. UPDATE TAMPILAN & PESAN WARNING
         // ==========================================
         function updateModalSurveys() {
             const teamId = parseInt(document.getElementById('modal-team-select').value);
-            const surveySelect = document.getElementById('modal-survey-1');
             const lockMsg = document.getElementById('lock-msg');
 
             // Reset UI
             lockMsg.classList.add('hidden');
             lockMsg.className = "hidden mt-2 p-2 rounded text-xs";
 
-            // Load Dropdown Survei
-            surveySelect.innerHTML = '<option value="">-- Pilih Tim Dahulu --</option>';
-            if (teamId && teamSurveys[teamId]) {
-                const surveys = teamSurveys[teamId];
-                const list = Array.isArray(surveys) ? surveys : Object.keys(surveys);
-                list.forEach(s => {
-                    let opt = document.createElement('option');
-                    // Handle both old (string) and new (array) format
-                    if (typeof s === 'string') {
-                        opt.value = s;
-                        opt.innerHTML = s;
-                    } else if (s && s.name) {
-                        opt.value = s.name;
-                        opt.innerHTML = s.name + (s.kro ? ' [' + s.kro + ']' : '');
-                    }
-                    surveySelect.appendChild(opt);
-                });
-            }
+            // Update semua survey select fields
+            updateAllSurveySelects();
 
             // Tampilkan Pesan Status / Warning
             if (teamId) {
@@ -817,11 +918,55 @@
         }
 
         // ==========================================
-        // 6. INTERCEPTOR SUBMIT FORM (POPUP KONFIRMASI)
+        // 7. INTERCEPTOR SUBMIT FORM (POPUP KONFIRMASI)
         // ==========================================
         const formAssign = document.getElementById('assignment-form');
         if (formAssign) {
             formAssign.addEventListener('submit', function(e) {
+                // Validasi: SEMUA survei yang ditampilkan harus punya nama
+                let surveyValidation = [];
+                document.querySelectorAll('.modal-survey-select').forEach((select, idx) => {
+                    const index = idx + 1;
+                    const surveyName = select.value;
+                    const volInput = select.parentElement.querySelector('input[type="number"]');
+                    const volume = volInput ? volInput.value : 1;
+                    
+                    surveyValidation.push({
+                        index: index,
+                        survey: surveyName,
+                        volume: volume
+                    });
+                    
+                    console.log(`Survey ${index}: ${surveyName} (volume: ${volume})`);
+                });
+                
+                // Cek minimal ada 1 survei yang dipilih
+                let hasSurvey = surveyValidation.some(s => s.survey);
+                
+                if (!hasSurvey) {
+                    e.preventDefault();
+                    Swal.fire({
+                        title: 'Peringatan',
+                        text: 'Pilih minimal 1 survei untuk mitra ini',
+                        icon: 'warning'
+                    });
+                    return;
+                }
+                
+                // Cek jika ada survei yang kosong di tengah (harus urut)
+                for (let i = 0; i < surveyValidation.length; i++) {
+                    if (!surveyValidation[i].survey && i > 0) {
+                        // Ada gap di survei - suruh user isi dari atas
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Peringatan',
+                            text: 'Survei harus diisi dari atas. Jangan ada yang kosong di tengah.',
+                            icon: 'warning'
+                        });
+                        return;
+                    }
+                }
+                
                 const teamSelect = document.getElementById('modal-team-select');
                 const selectedTeamId = parseInt(teamSelect.value);
 
