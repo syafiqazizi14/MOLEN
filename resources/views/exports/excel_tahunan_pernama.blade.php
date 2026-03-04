@@ -9,6 +9,7 @@
             <th style="border: 1px solid #000000; text-align: left;">Tim</th>
             <th style="border: 1px solid #000000; text-align: left;">KRO</th>
             <th style="border: 1px solid #000000; text-align: left;">Jadwal Kegiatan (Awal &amp; Akhir)</th>
+            <th style="border: 1px solid #000000; text-align: left;">Bulan</th>
             <th style="border: 1px solid #000000; text-align: left;">Pemutakhiran</th>
             <th style="border: 1px solid #000000; text-align: left;">Sensus/Survei</th>
             <th style="border: 1px solid #000000; text-align: center;">Volume</th>
@@ -26,6 +27,7 @@
                 $timLines = [];
                 $kroLines = [];
                 $jadwalLines = [];
+                $bulanLines = [];
                 $pemutakhiranLines = [];
                 $surveiLines = [];
                 $volumeLines = [];
@@ -39,11 +41,12 @@
                         continue;
                     }
 
-                    $detail = $surveyDetailMap[$surveyName] ?? ['kro' => '-', 'jadwal_kegiatan' => '-'];
+                    $detail = $surveyDetailMap[$surveyName] ?? ['kro' => '-', 'jadwal_kegiatan' => '-', 'bulan' => '-'];
 
                     $timLines[] = $surveyTeamMap[$surveyName] ?? '-';
                     $kroLines[] = $detail['kro'] ?? '-';
                     $jadwalLines[] = $detail['jadwal_kegiatan'] ?? '-';
+                    $bulanLines[] = $detail['bulan'] ?? '-';
                     $pemutakhiranLines[] = '-';
                     $surveiLines[] = $surveyName;
                     $volumeLines[] = $data['vol'];
@@ -56,6 +59,7 @@
                     $timLines = ['-'];
                     $kroLines = ['-'];
                     $jadwalLines = ['-'];
+                    $bulanLines = ['-'];
                     $pemutakhiranLines = ['-'];
                     $surveiLines = ['-'];
                     $volumeLines = ['-'];
@@ -68,6 +72,7 @@
                     count($timLines),
                     count($kroLines),
                     count($jadwalLines),
+                    count($bulanLines),
                     count($pemutakhiranLines),
                     count($surveiLines),
                     count($volumeLines),
@@ -96,6 +101,7 @@
                     <td style="border: 1px solid #000000; text-align: left;">{{ e($timLines[$i] ?? '-') }}</td>
                     <td style="border: 1px solid #000000; text-align: left;">{{ e($kroLines[$i] ?? '-') }}</td>
                     <td style="border: 1px solid #000000; text-align: left;">{{ e($jadwalLines[$i] ?? '-') }}</td>
+                    <td style="border: 1px solid #000000; text-align: left;">{{ e($bulanLines[$i] ?? '-') }}</td>
                     <td style="border: 1px solid #000000; text-align: left;">{{ e($pemutakhiranLines[$i] ?? '-') }}</td>
                     <td style="border: 1px solid #000000; text-align: left;">{{ e($surveiLines[$i] ?? '-') }}</td>
                     <td style="border: 1px solid #000000; text-align: center;">{{ $volumeLines[$i] ?? '-' }}</td>

@@ -96,6 +96,7 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
         foreach ($surveiData as $s) {
             Carbon::setLocale('id');
             $jadwalFormatted = '-';
+            $bulan = '-';
             if ($s->jadwal_kegiatan && $s->jadwal_berakhir_kegiatan) {
                 $start = Carbon::parse($s->jadwal_kegiatan);
                 $end = Carbon::parse($s->jadwal_berakhir_kegiatan);
@@ -110,11 +111,14 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                         ' - ' .
                         $end->day . ' ' . $end->translatedFormat('F Y');
                 }
+                // Extract month from start date
+                $bulan = $start->translatedFormat('F');
             }
 
             $detail = [
                 'kro' => $s->kro ?? '-',
                 'jadwal_kegiatan' => $jadwalFormatted,
+                'bulan' => $bulan,
                 'jadwal_berakhir' => '',
             ];
 
@@ -135,6 +139,7 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                 if (stripos($s->nama_survei, $surveyName) !== false || stripos($surveyName, $s->nama_survei) !== false) {
                     Carbon::setLocale('id');
                     $jadwalFormatted = '-';
+                    $bulan = '-';
                     if ($s->jadwal_kegiatan && $s->jadwal_berakhir_kegiatan) {
                         $start = Carbon::parse($s->jadwal_kegiatan);
                         $end = Carbon::parse($s->jadwal_berakhir_kegiatan);
@@ -143,16 +148,19 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                                 ? $start->day . '-' . $end->day . ' ' . $start->translatedFormat('F Y')
                                 : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y'))
                             : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y');
+                        // Extract month from start date
+                        $bulan = $start->translatedFormat('F');
                     }
                     return [
                         'kro' => $s->kro ?? '-',
                         'jadwal_kegiatan' => $jadwalFormatted,
+                        'bulan' => $bulan,
                         'jadwal_berakhir' => '',
                     ];
                 }
             }
 
-            return ['kro' => '-', 'jadwal_kegiatan' => '-', 'jadwal_berakhir' => '-'];
+            return ['kro' => '-', 'jadwal_kegiatan' => '-', 'bulan' => '-', 'jadwal_berakhir' => '-'];
         };
 
         $uniqueSurveys = [];
@@ -185,6 +193,8 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                                         : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y'))
                                     : $start->day . ' ' . $start->translatedFormat('F Y') . ' - ' . $end->day . ' ' . $end->translatedFormat('F Y');
                                 $detail['jadwal_kegiatan'] = $jadwalFormatted;
+                                // Extract month from start date
+                                $detail['bulan'] = $start->translatedFormat('F');
                             }
                         }
                         
@@ -263,10 +273,10 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
 
                 if (!$this->bulan) {
                     $highestRow = $sheet->getHighestRow();
-                    $sheet->getStyle('A1:N1')->getFont()->setBold(true);
-                    $sheet->getStyle('A1:N1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('A1:N1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
-                    $sheet->getStyle('A1:N' . $highestRow)->applyFromArray([
+                    $sheet->getStyle('A1:O1')->getFont()->setBold(true);
+                    $sheet->getStyle('A1:O1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('A1:O1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
+                    $sheet->getStyle('A1:O' . $highestRow)->applyFromArray([
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => Border::BORDER_THIN,
@@ -274,14 +284,14 @@ class RekapHonorDetailSheet implements FromView, ShouldAutoSize, WithColumnForma
                             ],
                         ],
                     ]);
-                    $sheet->getStyle('A2:N' . $highestRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
+                    $sheet->getStyle('A2:O' . $highestRow)->getAlignment()->setVertical(Alignment::VERTICAL_TOP);
                     $sheet->getStyle('A2:A' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('C2:D' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $sheet->getStyle('K2:L' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $sheet->getStyle('L2:M' . $highestRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $sheet->getStyle('B2:B' . $highestRow)->getAlignment()->setWrapText(true);
-                    $sheet->getStyle('E2:N' . $highestRow)->getAlignment()->setWrapText(true);
-                    $sheet->getStyle('M2:M' . $highestRow)->getNumberFormat()->setFormatCode('"Rp" #,##0');
+                    $sheet->getStyle('E2:O' . $highestRow)->getAlignment()->setWrapText(true);
                     $sheet->getStyle('N2:N' . $highestRow)->getNumberFormat()->setFormatCode('"Rp" #,##0');
+                    $sheet->getStyle('O2:O' . $highestRow)->getNumberFormat()->setFormatCode('"Rp" #,##0');
 
                     $sheet->getStyle('C2:C' . $highestRow)->getNumberFormat()->setFormatCode(NumberFormat::FORMAT_TEXT);
                     for ($row = 2; $row <= $highestRow; $row++) {
