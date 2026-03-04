@@ -15,8 +15,13 @@
     </div>
 
     <nav class="mt-10">
-
-
+        <!-- NEWS - Paling Atas -->
+        <a class="flex items-center px-4 py-3 mt-2 mx-4 text-lg text-gray-500 hover:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 transition-all duration-300 rounded-lg group {{ request()->is('news*') ? 'text-white bg-gradient-to-r from-blue-600 to-blue-500' : '' }}"
+            href="/news">
+            <i class="fas fa-newspaper w-5 h-5 mr-3 text-xl group-hover:scale-110 transition-transform"></i>
+            <span class="text-base font-semibold">NEWS</span>
+            <span class="ml-auto text-xs bg-red-500 text-white px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">New</span>
+        </a>
 
         <!-- User -->
         <div>
@@ -402,7 +407,6 @@
                 
             </div>
         </div>
-
 
     </nav>
 </div>

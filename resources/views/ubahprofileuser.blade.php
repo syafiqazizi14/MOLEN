@@ -142,11 +142,16 @@
                                     required readonly value="{{ auth()->user()->nomer_telepon }}">
                             </div>
 
-
-
-
-
-
+                            <!-- Tanggal Lahir -->
+                            <div class="mt-4">
+                                <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
+                                <input type="date" id="tanggal_lahir" name="tanggal_lahir"
+                                    class="mt-1 p-2 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
+                                    value="{{ auth()->user()->tanggal_lahir }}">
+                                <p class="mt-1 text-xs text-gray-500">
+                                    <i class="fas fa-info-circle"></i> Isi tanggal lahir Anda agar muncul di notifikasi ulang tahun
+                                </p>
+                            </div>
 
                             <!-- Submit button -->
                             <div class="mt-6">

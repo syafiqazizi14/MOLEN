@@ -132,7 +132,7 @@ class UserController extends Controller
         $user->update([
             'name' => $request->name,
             'gambar' => $image_name,
-           
+            'tanggal_lahir' => $request->tanggal_lahir,
         ]);
         return redirect()->back()->with(['success' => 'Profile Berhasil Diupdate!'], 200);
     }

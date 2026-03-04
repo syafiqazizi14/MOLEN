@@ -28,6 +28,7 @@ class User extends Authenticatable
         'is_active',
         'username',
         'gambar',
+        'tanggal_lahir',
     ];
 
     // public function casts(): array
