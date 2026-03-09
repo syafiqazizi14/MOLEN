@@ -24,13 +24,14 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const birthdays = @json($globalBirthdays ?? []);
+        const currentUserId = '{{ auth()->id() }}';
         const popupSessionKey = 'birthday_popup_shown_in_tab_{{ session()->getId() }}';
         const currentPath = window.location.pathname;
         const isDashboardPage = currentPath === '/dashboard';
         let isInternalNavigation = false;
 
         const today = new Date().toISOString().slice(0, 10);
-        const dismissKey = 'birthday_dismissed_' + today;
+        const dismissKey = `birthday_dismissed_${currentUserId}_${today}`;
 
         function showBirthdayPopupIfAllowed() {
             const alreadyShownInThisTab = sessionStorage.getItem(popupSessionKey) === '1';
@@ -123,7 +124,8 @@
         const check = document.getElementById('birthdayDismissCheck');
         if (check && check.checked) {
             const today = new Date().toISOString().slice(0, 10);
-            localStorage.setItem('birthday_dismissed_' + today, '1');
+            const currentUserId = '{{ auth()->id() }}';
+            localStorage.setItem(`birthday_dismissed_${currentUserId}_${today}`, '1');
         }
         modal.classList.add('is-hidden');
         modal.classList.remove('is-visible');
