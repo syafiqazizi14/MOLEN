@@ -45,7 +45,6 @@ use App\Http\Controllers\SurveyPlanController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\TeamSurveyController;
 use App\Http\Controllers\MitraUtilityController;
-use App\Http\Controllers\NewsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -345,28 +344,8 @@ Route::get('/siminbar', function () {
     return view('siminbar');
 })->middleware(['auth', 'verified'])->name('siminbar');
 
-// NEWS Routes
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/news', [NewsController::class, 'index'])->name('news.index');
-    
-    // Admin only routes for news CRUD
-    Route::middleware(['admin'])->group(function () {
-        Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
-        Route::post('/news', [NewsController::class, 'store'])->name('news.store');
-        Route::get('/news/{id}/edit', [NewsController::class, 'edit'])->name('news.edit');
-        Route::put('/news/{id}', [NewsController::class, 'update'])->name('news.update');
-        Route::delete('/news/{id}', [NewsController::class, 'destroy'])->name('news.destroy');
-    });
-});
-
 Route::get('/dashboard', function () {
-    // Ambil user yang ulang tahun hari ini untuk notifikasi
-    $birthdays = \App\Models\User::whereRaw('DAY(tanggal_lahir) = DAY(CURDATE())')
-        ->whereRaw('MONTH(tanggal_lahir) = MONTH(CURDATE())')
-        ->where('is_active', 1)
-        ->get(['name', 'gambar', 'tanggal_lahir']);
-    
-    return view('dashboard', compact('birthdays'));
+    return view('dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

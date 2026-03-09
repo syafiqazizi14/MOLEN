@@ -98,3 +98,5 @@
 
     </div>
 </header>
+
+<x-birthday-popup />

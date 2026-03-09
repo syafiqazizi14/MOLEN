@@ -15,14 +15,6 @@
     </div>
 
     <nav class="mt-10">
-        <!-- NEWS - Paling Atas -->
-        <a class="flex items-center px-4 py-3 mt-2 mx-4 text-lg text-gray-500 hover:text-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-500 transition-all duration-300 rounded-lg group {{ request()->is('news*') ? 'text-white bg-gradient-to-r from-blue-600 to-blue-500' : '' }}"
-            href="/news">
-            <i class="fas fa-newspaper w-5 h-5 mr-3 text-xl group-hover:scale-110 transition-transform"></i>
-            <span class="text-base font-semibold">NEWS</span>
-            <span class="ml-auto text-xs bg-red-500 text-white px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">New</span>
-        </a>
-
         <!-- User -->
         <div>
             <!-- admin -->
@@ -276,43 +268,43 @@
 
             <div class="dropdown-container {{ $isDropdownMitraActive ? 'block' : 'hidden' }}">
 
-                  {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('daftarMitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('daftarMitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="/daftarMitra">
-                    <span class="mx-3">Database Mitra</span>--}}
+                    <span class="mx-3">Database Mitra</span> --}}
                 </a>
                 <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100
     {{ request()->routeIs('mitra.planning.*') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
-   href="{{ route('mitra.planning.index') }}" style="text-decoration:none;">
-   <span class="mx-3">Matriks Setahun</span>
-</a>
+                    href="{{ route('mitra.planning.index') }}" style="text-decoration:none;">
+                    <span class="mx-3">Matriks Setahun</span>
+                </a>
 
-<a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100
+                <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100
     {{ request()->routeIs('mitra.penempatan.*') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
-   href="{{ route('mitra.penempatan.index') }}" style="text-decoration:none;">
-   <span class="mx-3">Alokasi</span>
-</a>
+                    href="{{ route('mitra.penempatan.index') }}" style="text-decoration:none;">
+                    <span class="mx-3">Alokasi</span>
+                </a>
 
-                  {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('daftarSurvei') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('daftarSurvei') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="/daftarSurvei">
-                    <span class="mx-3">Daftar Survei</span>--}}
+                    <span class="mx-3">Daftar Survei</span> --}}
                 </a>
                 {{-- Template Surat --}}
                 {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('buatSurat') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="/buatSurat" style="text-decoration: none;">
                     <span class="mx-3">Buat Surat</span>
-                </a>--}}
-                   {{--<a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->routeIs('surat.create') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                </a> --}}
+                {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->routeIs('surat.create') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="{{ route('surat.create') }}" style="text-decoration: none;">
                     <span class="mx-3">Buat Surat (PDF)</span>
                 </a> --}}
-                   {{--<a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('ReportSurvei') || request()->is('ReportMitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('ReportSurvei') || request()->is('ReportMitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="/ReportMitra">
                     <span class="mx-3">Report</span>
-                </a>--}}
-               {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('posisimitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                </a> --}}
+                {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('posisimitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="/posisimitra">
                     <span class="mx-3">Posisi</span>
-                </a>--}}
+                </a> --}}
                 {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('ReportMitra') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                         href="/ReportMitra">
                         <span class="mx-3">Laporan Mitra</span>
@@ -394,7 +386,7 @@
                 <img src="{{ asset('kupetik.png') }}" alt="Logo mitabps" class="ml-4 w-12 h-12" />
                 <button
                     class="dropdown-btn flex items-center px-4 py-3 text-lg {{ $isDropdownMitraActive ? 'text-white' : 'text-gray-500' }} hover:bg-opacity-80 hover:text-white transition-all duration-300 rounded-md">
-                   KUPETIK
+                    KUPETIK
                     <i class="fa fa-caret-down ml-2"></i>
                 </button>
             </div>
@@ -404,7 +396,7 @@
                     href="https://sites.google.com/view/disiplin3516/home">
                     <span class="mx-3">KUPETIK</span>
                 </a>
-                
+
             </div>
         </div>
 
