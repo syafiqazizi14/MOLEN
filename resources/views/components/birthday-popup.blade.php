@@ -12,6 +12,10 @@
         <div class="birthday-list-area" id="birthdayList"></div>
 
         <div class="birthday-footer">
+            <label class="birthday-dismiss-label">
+                <input type="checkbox" id="birthdayDismissCheck" class="birthday-dismiss-check">
+                <span>Jangan tampilkan lagi hari ini</span>
+            </label>
             <button type="button" onclick="closeBirthdayModal()" class="birthday-close-btn">✓ Tutup</button>
         </div>
     </div>
@@ -25,10 +29,14 @@
         const isDashboardPage = currentPath === '/dashboard';
         let isInternalNavigation = false;
 
+        const today = new Date().toISOString().slice(0, 10);
+        const dismissKey = 'birthday_dismissed_' + today;
+
         function showBirthdayPopupIfAllowed() {
             const alreadyShownInThisTab = sessionStorage.getItem(popupSessionKey) === '1';
+            const permanentlyDismissed = localStorage.getItem(dismissKey) === '1';
 
-            if (birthdays.length === 0 || alreadyShownInThisTab || isDashboardPage) {
+            if (birthdays.length === 0 || alreadyShownInThisTab || isDashboardPage || permanentlyDismissed) {
                 return;
             }
 
@@ -112,6 +120,11 @@
 
     function closeBirthdayModal() {
         const modal = document.getElementById('birthdayModal');
+        const check = document.getElementById('birthdayDismissCheck');
+        if (check && check.checked) {
+            const today = new Date().toISOString().slice(0, 10);
+            localStorage.setItem('birthday_dismissed_' + today, '1');
+        }
         modal.classList.add('is-hidden');
         modal.classList.remove('is-visible');
     }
@@ -296,8 +309,34 @@
     .birthday-footer {
         background: #f8fafc;
         border-top: 1px solid #e2e8f0;
-        text-align: right;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 0.9rem 1rem;
+        gap: 0.75rem;
+    }
+
+    .birthday-dismiss-label {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #64748b;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .birthday-dismiss-label:hover {
+        color: #334155;
+    }
+
+    .birthday-dismiss-check {
+        width: 15px;
+        height: 15px;
+        accent-color: var(--bps-blue);
+        cursor: pointer;
+        flex-shrink: 0;
     }
 
     .birthday-close-btn {
@@ -340,6 +379,11 @@
 
         .birthday-footer {
             padding: 0.75rem 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .birthday-dismiss-label {
+            font-size: 0.78rem;
         }
     }
 </style>
