@@ -19,7 +19,7 @@ class ShareBirthdayPopupData
             $birthdays = User::whereRaw('DAY(tanggal_lahir) = DAY(CURDATE())')
                 ->whereRaw('MONTH(tanggal_lahir) = MONTH(CURDATE())')
                 ->where('is_active', 1)
-                ->get(['name', 'gambar', 'tanggal_lahir']);
+                ->get(['name', 'panggilan', 'gambar', 'tanggal_lahir']);
 
             view()->share('globalBirthdays', $birthdays);
         }
