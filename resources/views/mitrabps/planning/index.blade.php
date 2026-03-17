@@ -149,89 +149,89 @@
                                                 @if ($tasks->count() > 0)
                                                     <div
                                                         class="flex flex-col gap-1 h-full overflow-y-auto custom-scrollbar">
-                                                        @foreach ($tasks as $task)
-                                                            @php
-                                                                $bgClass =
-                                                                    $task->status_anggota == 'BKO'
-                                                                        ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                                                        : 'bg-blue-100 text-blue-800 border-blue-200';
-                                                            @endphp
-                                                            <div
-                                                                class="{{ $bgClass }} border rounded p-1 text-left relative group shadow-sm">
-                                                                <div class="text-[8px] opacity-75 truncate mb-1">
-                                                                    {{ $task->team->name ?? '-' }}</div>
+                                                        @php
+                                                            $task = $tasks->first();
+                                                            $bgClass =
+                                                                $task->status_anggota == 'BKO'
+                                                                    ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                                                    : 'bg-blue-100 text-blue-800 border-blue-200';
 
-                                                                @php
-                                                                    $isAdminUser = auth()->user()->role === 'admin' || auth()->user()->is_mitra_admin == 1;
-                                                                    $canManageTask = $isAdminUser || ($canEdit && !is_null($userTeamId) && $task->team_id == $userTeamId);
-                                                                    $surveyItems = [
-                                                                        ['slot' => 1, 'name' => $task->survey_1, 'vol' => $task->vol_1],
-                                                                        ['slot' => 2, 'name' => $task->survey_2, 'vol' => $task->vol_2],
-                                                                        ['slot' => 3, 'name' => $task->survey_3, 'vol' => $task->vol_3],
-                                                                    ];
-                                                                @endphp
+                                                            $isAdminUser = auth()->user()->role === 'admin' || auth()->user()->is_mitra_admin == 1;
+                                                            $canManageTask = $isAdminUser || ($canEdit && !is_null($userTeamId) && $task->team_id == $userTeamId);
 
-                                                                <div class="space-y-1">
-                                                                    @foreach ($surveyItems as $item)
-                                                                        @if (!empty($item['name']))
-                                                                            <div class="bg-white/40 rounded px-1 py-0.5 border border-white/30">
-                                                                                <div class="flex items-start justify-between gap-2">
-                                                                                    <div class="min-w-0">
-                                                                                        <div class="font-bold truncate text-[9px] leading-tight" title="{{ $item['name'] }}">
-                                                                                            {{ $item['name'] }}
-                                                                                        </div>
-                                                                                        <span class="text-[8px] bg-white/50 px-1 rounded border border-black/10 inline-block mt-0.5">v:{{ $item['vol'] }}</span>
-                                                                                    </div>
+                                                            $allSurveyItems = [];
+                                                            foreach ($tasks as $taskItem) {
+                                                                if (!empty($taskItem->survey_1)) {
+                                                                    $allSurveyItems[] = ['name' => $taskItem->survey_1, 'vol' => $taskItem->vol_1];
+                                                                }
+                                                                if (!empty($taskItem->survey_2)) {
+                                                                    $allSurveyItems[] = ['name' => $taskItem->survey_2, 'vol' => $taskItem->vol_2];
+                                                                }
+                                                                if (!empty($taskItem->survey_3)) {
+                                                                    $allSurveyItems[] = ['name' => $taskItem->survey_3, 'vol' => $taskItem->vol_3];
+                                                                }
+                                                            }
+                                                            $primarySurvey = $allSurveyItems[0] ?? null;
+                                                        @endphp
 
-                                                                                    @if ($canManageTask)
-                                                                                        <div class="flex items-center gap-1 shrink-0 mt-0.5">
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                onclick='openEditModal(@json($task), "{{ $mitra->nama_lengkap }}", {{ $m }})'
-                                                                                                class="inline-flex items-center"
-                                                                                                title="Edit survei"
-                                                                                                aria-label="Edit survei">
-                                                                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:#2563eb">
-                                                                                                    <path d="M16.862 3.487a1.75 1.75 0 0 1 2.475 0l1.176 1.176a1.75 1.75 0 0 1 0 2.475L9.06 18.59a1.75 1.75 0 0 1-.74.435l-4.11 1.173a.75.75 0 0 1-.927-.927l1.173-4.11c.08-.28.23-.533.435-.74L16.862 3.487Zm1.414 1.06-12.3 12.3-.74 2.59 2.59-.74 12.3-12.3-1.85-1.85Z"/>
-                                                                                                </svg>
-                                                                                            </button>
+                                                        <div class="{{ $bgClass }} border rounded p-1 text-left relative group shadow-sm">
+                                                            <div class="text-[8px] opacity-75 truncate mb-1">
+                                                                {{ $task->team->name ?? '-' }}</div>
 
-                                                                                            @if ($item['slot'] === 1)
-                                                                                                <form method="POST"
-                                                                                                      action="{{ route('placement.destroy', $task->id) }}"
-                                                                                                      onsubmit="return confirmDelete(event, this, {{ $isPast ? 'true' : 'false' }})"
-                                                                                                      class="inline">
-                                                                                                    @csrf
-                                                                                                    @method('DELETE')
-                                                                                                    <button type="submit" class="inline-flex items-center" title="Hapus semua tugas di bulan ini" aria-label="Hapus semua tugas">
-                                                                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:#dc2626">
-                                                                                                            <path d="M9 3.75A2.25 2.25 0 0 1 11.25 1.5h1.5A2.25 2.25 0 0 1 15 3.75V5h4.5a.75.75 0 0 1 0 1.5h-1.1l-1.02 14.02A2.25 2.25 0 0 1 15.14 22.5H8.86a2.25 2.25 0 0 1-2.24-1.98L5.6 6.5H4.5a.75.75 0 0 1 0-1.5H9V3.75Zm1.5 1.25h3V3.75A.75.75 0 0 0 12.75 3h-1.5a.75.75 0 0 0-.75.75V5ZM8.12 6.5l.97 13.4a.75.75 0 0 0 .75.6h6.32a.75.75 0 0 0 .75-.6l.97-13.4H8.12Z"/>
-                                                                                                        </svg>
-                                                                                                    </button>
-                                                                                                </form>
-                                                                                            @else
-                                                                                                <button
-                                                                                                    type="button"
-                                                                                                    onclick='deleteSurveySlot(@json($task), {{ $item['slot'] }}, {{ $isPast ? 'true' : 'false' }})'
-                                                                                                    class="inline-flex items-center"
-                                                                                                    title="Hapus survei ini"
-                                                                                                    aria-label="Hapus survei ini">
-                                                                                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:#dc2626">
-                                                                                                        <path d="M9 3.75A2.25 2.25 0 0 1 11.25 1.5h1.5A2.25 2.25 0 0 1 15 3.75V5h4.5a.75.75 0 0 1 0 1.5h-1.1l-1.02 14.02A2.25 2.25 0 0 1 15.14 22.5H8.86a2.25 2.25 0 0 1-2.24-1.98L5.6 6.5H4.5a.75.75 0 0 1 0-1.5H9V3.75Zm1.5 1.25h3V3.75A.75.75 0 0 0 12.75 3h-1.5a.75.75 0 0 0-.75.75V5ZM8.12 6.5l.97 13.4a.75.75 0 0 0 .75.6h6.32a.75.75 0 0 0 .75-.6l.97-13.4H8.12Z"/>
-                                                                                                    </svg>
-                                                                                                </button>
-                                                                                            @endif
-                                                                                        </div>
-                                                                                    @elseif(!$canManageTask)
-                                                                                        <i class="bi bi-lock-fill text-[8px] text-gray-400"></i>
-                                                                                    @endif
+                                                            <div class="space-y-1">
+                                                                @if ($primarySurvey)
+                                                                    <div class="bg-white/40 rounded px-1 py-0.5 border border-white/30">
+                                                                        <div class="flex items-start justify-between gap-2">
+                                                                            <div class="min-w-0">
+                                                                                <div class="font-bold truncate text-[9px] leading-tight" title="{{ $primarySurvey['name'] }}">
+                                                                                    {{ $primarySurvey['name'] }}
                                                                                 </div>
+                                                                                <span class="text-[8px] bg-white/50 px-1 rounded border border-black/10 inline-block mt-0.5">v:{{ $primarySurvey['vol'] }}</span>
+
+                                                                                @if (count($allSurveyItems) > 1)
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onclick='showSurveyListPopup(@json($allSurveyItems))'
+                                                                                        class="block mt-1 text-[8px] text-blue-700 hover:text-blue-900 underline font-semibold">
+                                                                                        Lihat semua survei ({{ count($allSurveyItems) }})
+                                                                                    </button>
+                                                                                @endif
                                                                             </div>
-                                                                        @endif
-                                                                    @endforeach
-                                                                </div>
+
+                                                                            @if ($canManageTask)
+                                                                                <div class="flex items-center gap-1 shrink-0 mt-0.5">
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        onclick='openEditModal(@json($task), "{{ $mitra->nama_lengkap }}", {{ $m }})'
+                                                                                        class="inline-flex items-center"
+                                                                                        title="Edit survei"
+                                                                                        aria-label="Edit survei">
+                                                                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:#2563eb">
+                                                                                            <path d="M16.862 3.487a1.75 1.75 0 0 1 2.475 0l1.176 1.176a1.75 1.75 0 0 1 0 2.475L9.06 18.59a1.75 1.75 0 0 1-.74.435l-4.11 1.173a.75.75 0 0 1-.927-.927l1.173-4.11c.08-.28.23-.533.435-.74L16.862 3.487Zm1.414 1.06-12.3 12.3-.74 2.59 2.59-.74 12.3-12.3-1.85-1.85Z"/>
+                                                                                        </svg>
+                                                                                    </button>
+
+                                                                                    <form method="POST"
+                                                                                          action="{{ route('placement.destroy', $task->id) }}"
+                                                                                          onsubmit="return confirmDelete(event, this, {{ $isPast ? 'true' : 'false' }})"
+                                                                                          class="inline">
+                                                                                        @csrf
+                                                                                        @method('DELETE')
+                                                                                        <button type="submit" class="inline-flex items-center" title="Hapus semua tugas di bulan ini" aria-label="Hapus semua tugas">
+                                                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="color:#dc2626">
+                                                                                                <path d="M9 3.75A2.25 2.25 0 0 1 11.25 1.5h1.5A2.25 2.25 0 0 1 15 3.75V5h4.5a.75.75 0 0 1 0 1.5h-1.1l-1.02 14.02A2.25 2.25 0 0 1 15.14 22.5H8.86a2.25 2.25 0 0 1-2.24-1.98L5.6 6.5H4.5a.75.75 0 0 1 0-1.5H9V3.75Zm1.5 1.25h3V3.75A.75.75 0 0 0 12.75 3h-1.5a.75.75 0 0 0-.75.75V5ZM8.12 6.5l.97 13.4a.75.75 0 0 0 .75.6h6.32a.75.75 0 0 0 .75-.6l.97-13.4H8.12Z"/>
+                                                                                            </svg>
+                                                                                        </button>
+                                                                                    </form>
+                                                                                </div>
+                                                                            @else
+                                                                                <i class="bi bi-lock-fill text-[8px] text-gray-400"></i>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                @endif
                                                             </div>
-                                                        @endforeach
+                                                        </div>
 
                                                         {{--@if (!$isPast && $isMyTeam)
                                                             <button
@@ -687,6 +687,31 @@
             } else {
                 runDelete();
             }
+        }
+
+        function showSurveyListPopup(items) {
+            const surveyList = Array.isArray(items) ? items.filter(item => item && item.name) : [];
+
+            if (!surveyList.length) {
+                Swal.fire('Info', 'Tidak ada survei.', 'info');
+                return;
+            }
+
+            const listHtml = surveyList
+                .map((item, index) => `
+                    <div style="text-align:left;padding:6px 0;border-bottom:1px solid #e5e7eb;">
+                        <div style="font-weight:600;font-size:13px;">${index + 1}. ${item.name}</div>
+                        <div style="font-size:12px;color:#6b7280;">Volume: ${item.vol ?? 0}</div>
+                    </div>
+                `)
+                .join('');
+
+            Swal.fire({
+                title: 'Semua Survei',
+                html: `<div style="max-height:300px;overflow-y:auto;padding-right:4px;">${listHtml}</div>`,
+                width: 520,
+                confirmButtonText: 'Tutup'
+            });
         }
 
         function updateSurveyOptions() {
