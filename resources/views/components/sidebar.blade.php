@@ -285,6 +285,18 @@
                     <span class="mx-3">Alokasi</span>
                 </a>
 
+                <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100
+    {{ request()->routeIs('mitra.recommendation.*') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                    href="{{ route('mitra.recommendation.index') }}" style="text-decoration:none;">
+                    <span class="mx-3">Rekomendasi</span>
+                </a>
+
+                <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100
+    {{ request()->routeIs('mitra.rekap.*') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
+                    href="{{ route('mitra.rekap.index') }}" style="text-decoration:none;">
+                    <span class="mx-3">Rekap Honor</span>
+                </a>
+
                 {{-- <a class="flex items-center px-6 py-2 mt-4 ml-10 text-gray-500 hover:bg-gray-700 hover:bg-opacity-25 hover:text-gray-100 {{ request()->is('daftarSurvei') ? 'text-white bg-gray-700 bg-opacity-50' : '' }}"
                     href="/daftarSurvei">
                     <span class="mx-3">Daftar Survei</span> --}}
