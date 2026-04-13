@@ -59,7 +59,7 @@
                             </select>
                         </form>
 
-                        <button onclick="openRateModal()"
+                        <button type="button" onclick="openRateModal()"
                             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2 shadow">
                             <i class="bi bi-plus-lg"></i> Tambah Harga
                         </button>
@@ -89,14 +89,23 @@
                         </thead>
                         <tbody class="text-gray-700 text-sm">
                             @forelse($rates as $rate)
-                                <tr class="border-b hover:bg-gray-50 transition">
+                                <tr class="border-b hover:bg-gray-50 transition {{ isset($rate->originalCount) && $rate->originalCount > 1 ? 'bg-blue-50' : '' }}">
                                     <td class="py-3 px-6 font-bold text-blue-600">{{ $rate->team->name ?? '-' }}</td>
-                                    <td class="py-3 px-6 font-semibold">{{ $rate->survey_name }}</td>
+                                    <td class="py-3 px-6 font-semibold">
+                                        {{ $rate->survey_name }}
+                                        @if(isset($rate->originalCount) && $rate->originalCount > 1)
+                                            <span class="inline-block ml-2 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded">
+                                                {{ $rate->originalCount }} item dijumlah
+                                            </span>
+                                        @endif
+                                    </td>
 
                                     <td class="py-3 px-6">
-                                        <form action="{{ route('mitra.rates.update', $rate->id) }}" method="POST"
-                                            class="flex items-center gap-2">
+                                        <form action="@if(isset($rate->originalCount) && $rate->originalCount > 1) {{ route('mitra.rates.updateGrouped') }} @else {{ route('mitra.rates.update', $rate->id) }} @endif" method="POST" class="flex items-center gap-2">
                                             @csrf @method('PUT')
+                                            <input type="hidden" name="team_id" value="{{ $rate->team_id }}">
+                                            <input type="hidden" name="survey_name" value="{{ $rate->survey_name }}">
+                                            <input type="hidden" name="unit" value="{{ $rate->unit }}">
                                             <div class="relative w-full">
                                                 <span class="absolute left-2 top-1.5 text-gray-500 text-xs">Rp</span>
                                                 <input type="number" name="cost" value="{{ $rate->cost }}"
@@ -118,11 +127,18 @@
                                     <td class="py-3 px-6 text-center text-gray-500">{{ $rate->unit }}</td>
 
                                     <td class="py-3 px-6 text-center">
-                                        <form action="{{ route('mitra.rates.destroy', $rate->id) }}" method="POST">
+                                        <form action="@if(isset($rate->originalCount) && $rate->originalCount > 1) {{ route('mitra.rates.destroyGrouped') }} @else {{ route('mitra.rates.destroy', $rate->id) }} @endif" method="POST">
                                             @csrf
-                                            @method('DELETE')
+                                            @if(isset($rate->originalCount) && $rate->originalCount > 1)
+                                                @method('DELETE')
+                                                <input type="hidden" name="team_id" value="{{ $rate->team_id }}">
+                                                <input type="hidden" name="survey_name" value="{{ $rate->survey_name }}">
+                                                <input type="hidden" name="unit" value="{{ $rate->unit }}">
+                                            @else
+                                                @method('DELETE')
+                                            @endif
 
-                                            <button type="button" onclick="confirmDeleteRate(this)"
+                                            <button type="button" onclick="confirmDeleteRate(this, {{ isset($rate->originalCount) ? $rate->originalCount : 1 }})"
                                                 class="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 p-2 rounded transition shadow-sm mx-auto flex items-center justify-center"
                                                 title="Hapus">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
@@ -148,12 +164,12 @@
     </div>
 
     <div id="rateModal"
-        class="fixed inset-0 z-[10000] hidden overflow-y-auto bg-gray-900 bg-opacity-50" style="display: none;">
+        class="fixed inset-0 z-[10000] hidden overflow-y-auto bg-gray-900 bg-opacity-50">
         <div class="flex items-center justify-center h-full">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
             <div class="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between">
                 <h5 class="font-bold">Tambah Harga Survei</h5>
-                <button onclick="closeRateModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
+                <button type="button" onclick="closeRateModal()" class="text-white hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <form action="{{ route('mitra.rates.store') }}" method="POST" class="p-6">
                 @csrf
@@ -258,10 +274,14 @@
         }
 
         // --- FUNGSI HAPUS RATE DENGAN SWEETALERT ---
-        function confirmDeleteRate(button) {
+        function confirmDeleteRate(button, itemCount) {
+            const message = itemCount > 1 
+                ? `Data ${itemCount} item dijumlah ini akan dihapus permanen.`
+                : "Data harga ini akan dihapus permanen.";
+            
             Swal.fire({
                 title: 'Hapus Standar Honor?',
-                text: "Data harga ini akan dihapus permanen.",
+                text: message,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',

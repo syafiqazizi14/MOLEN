@@ -481,6 +481,9 @@ Route::middleware('auth')->group(function () {
     // TAMBAHKAN INI (Untuk Update Cepat di Tabel)
     Route::put('/mitra/rates/{id}', [RateController::class, 'update'])->name('mitra.rates.update');
     Route::delete('/mitra/rates/{id}', [RateController::class, 'destroy'])->name('mitra.rates.destroy');
+    // Routes untuk Grouped Operations
+    Route::put('/mitra/rates-grouped/update', [RateController::class, 'updateGrouped'])->name('mitra.rates.updateGrouped');
+    Route::delete('/mitra/rates-grouped/delete', [RateController::class, 'destroyGrouped'])->name('mitra.rates.destroyGrouped');
 
     Route::get('/mitra/penempatan/planning', [SurveyPlanController::class, 'index'])->name('mitra.planning.index');
     // Route Rekomendasi

@@ -39,6 +39,26 @@ class RateController extends Controller
 
         $rates = $query->orderBy('team_id')->get();
 
+        // 3.5 GROUP & SUM rates by (team_id, survey_name, unit)
+        $groupedRates = $rates->groupBy(function($item) {
+            return $item->team_id . '|' . $item->survey_name . '|' . $item->unit;
+        })->map(function($group) {
+            $first = $group->first();
+            $totalCost = $group->sum('cost');
+            $itemCount = $group->count();
+            
+            return (object) [
+                'id' => $first->id,
+                'team_id' => $first->team_id,
+                'team' => $first->team,
+                'survey_name' => $first->survey_name,
+                'unit' => $first->unit,
+                'cost' => $totalCost,
+                'originalCount' => $itemCount,
+                'items' => $group->toArray()
+            ];
+        })->values();
+
         // 4. DATA TIM
         if ($canManageAllTeams) {
             $teams = Team::all();
@@ -55,6 +75,8 @@ class RateController extends Controller
             }
             $teamSurveys[$t->id] = $surveys;
         }
+
+        $rates = $groupedRates;
 
         return view('mitrabps.rates.index', compact(
             'rates',
@@ -91,19 +113,29 @@ class RateController extends Controller
             }
         }
 
-        // SIMPAN SPESIFIK BULAN & TAHUN
-        Rate::updateOrCreate(
-            [
+        // CEK APAKAH SUDAH ADA RATE DENGAN (team_id, survey_name, unit, month, year) YANG SAMA
+        $existingRate = Rate::where('team_id', $request->team_id)
+            ->where('survey_name', $request->survey_name)
+            ->where('unit', $request->unit)
+            ->where('month', $request->month)
+            ->where('year', $request->year)
+            ->first();
+
+        if ($existingRate) {
+            // JIKA SUDAH ADA: TAMBAHKAN COST KE YANG SUDAH ADA
+            $existingRate->cost += $request->cost;
+            $existingRate->save();
+        } else {
+            // JIKA BELUM ADA: BUAT RECORD BARU
+            Rate::create([
                 'team_id' => $request->team_id,
                 'survey_name' => $request->survey_name,
-                'month' => $request->month, // Kunci unik
-                'year' => $request->year    // Kunci unik
-            ],
-            [
+                'unit' => $request->unit,
                 'cost' => $request->cost,
-                'unit' => $request->unit
-            ]
-        );
+                'month' => $request->month,
+                'year' => $request->year
+            ]);
+        }
 
         return back()->with('success', 'Standar harga berhasil disimpan!');
     }
@@ -141,5 +173,66 @@ class RateController extends Controller
 
         $rate->delete();
         return back()->with('success', 'Harga honor dihapus.');
+    }
+
+    // --- UPDATE GROUPED RATES ---
+    public function updateGrouped(Request $request)
+    {
+        $request->validate([
+            'team_id' => 'required',
+            'survey_name' => 'required',
+            'unit' => 'required',
+            'month' => 'required',
+            'year' => 'required',
+            'cost' => 'required|numeric|min:0',
+        ]);
+
+        $user = Auth::user();
+        $requestedTeamId = $request->input('team_id');
+
+        if (!$user->is_admin && $user->team_id != 1) {
+            if ($user->team_id != $requestedTeamId) {
+                return back()->with('error', 'Anda hanya berhak mengatur harga tim Anda sendiri.');
+            }
+        }
+
+        $updatedCount = Rate::where('team_id', $request->team_id)
+            ->where('survey_name', $request->survey_name)
+            ->where('unit', $request->unit)
+            ->where('month', $request->month)
+            ->where('year', $request->year)
+            ->update(['cost' => $request->cost]);
+
+        return back()->with('success', "Standar harga berhasil diperbarui! ($updatedCount item)");
+    }
+
+    // --- DELETE GROUPED RATES ---
+    public function destroyGrouped(Request $request)
+    {
+        $request->validate([
+            'team_id' => 'required',
+            'survey_name' => 'required',
+            'unit' => 'required',
+            'month' => 'required',
+            'year' => 'required',
+        ]);
+
+        $user = Auth::user();
+        $requestedTeamId = $request->input('team_id');
+
+        if (!$user->is_admin && $user->team_id != 1) {
+            if ($user->team_id != $requestedTeamId) {
+                return back()->with('error', 'Anda hanya berhak menghapus harga tim Anda sendiri.');
+            }
+        }
+
+        $deletedCount = Rate::where('team_id', $request->team_id)
+            ->where('survey_name', $request->survey_name)
+            ->where('unit', $request->unit)
+            ->where('month', $request->month)
+            ->where('year', $request->year)
+            ->delete();
+
+        return back()->with('success', "Harga honor dihapus. ($deletedCount item)");
     }
 }
