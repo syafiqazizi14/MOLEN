@@ -19,15 +19,16 @@ class RateController extends Controller
 
         // 2. OTORITAS
         $isAdmin = $user->is_mitra_admin == 1;
-        $isLeader = !is_null($user->team_id);
+        $isLeader = !is_null($user->team_id) && $user->team_id != 1;
+        $canManageAllTeams = $isAdmin || $user->team_id == 1;
 
         // 3. QUERY DATA RATE (Filter Waktu + Otoritas)
         $query = Rate::with('team')
             ->where('month', $month) // <--- Penting: Filter Bulan
             ->where('year', $year);  // <--- Penting: Filter Tahun
 
-        // Jika Ketua Tim (dan bukan admin), hanya tampilkan rate timnya sendiri
-        if ($isLeader && !$isAdmin) {
+        // Jika Ketua Tim (dan bukan admin/team 1), hanya tampilkan rate timnya sendiri
+        if ($isLeader && !$canManageAllTeams) {
             $query->where('team_id', $user->team_id);
         }
 
@@ -39,7 +40,7 @@ class RateController extends Controller
         $rates = $query->orderBy('team_id')->get();
 
         // 4. DATA TIM
-        if ($isAdmin) {
+        if ($canManageAllTeams) {
             $teams = Team::all();
         } else {
             $teams = Team::where('id', $user->team_id)->get();
@@ -61,6 +62,7 @@ class RateController extends Controller
             'teamSurveys',
             'isAdmin',
             'isLeader',
+            'canManageAllTeams',
             'month',
             'year' // <--- Kirim month & year
         ));
@@ -78,8 +80,15 @@ class RateController extends Controller
         ]);
 
         $user = Auth::user();
-        if (!$user->is_mitra_admin && $user->team_id != $request->team_id) {
-            return back()->with('error', 'Anda hanya berhak mengatur harga tim Anda sendiri.');
+        $requestedTeamId = $request->input('team_id');
+        
+        // AUTHORIZATION CHECK:
+        // - Admin atau team_id 1 bisa set harga ke tim manapun
+        // - Regular user hanya bisa ke tim mereka sendiri
+        if (!$user->is_admin && $user->team_id != 1) {
+            if ($user->team_id != $requestedTeamId) {
+                return back()->with('error', 'Anda hanya berhak mengatur harga tim Anda sendiri.');
+            }
         }
 
         // SIMPAN SPESIFIK BULAN & TAHUN
@@ -105,7 +114,8 @@ class RateController extends Controller
         $rate = Rate::findOrFail($id);
 
         $user = Auth::user();
-        if (!$user->is_mitra_admin && $user->team_id != $rate->team_id) {
+        // Allow: admin, team_id 1, or owner of the rate's team
+        if (!$user->is_admin && $user->team_id != 1 && $user->team_id != $rate->team_id) {
             return back()->with('error', 'Akses ditolak.');
         }
 
@@ -124,7 +134,8 @@ class RateController extends Controller
         $rate = Rate::findOrFail($id);
 
         $user = Auth::user();
-        if (!$user->is_mitra_admin && $user->team_id != $rate->team_id) {
+        // Allow: admin, team_id 1, or owner of the rate's team
+        if (!$user->is_admin && $user->team_id != 1 && $user->team_id != $rate->team_id) {
             return back()->with('error', 'Akses ditolak.');
         }
 

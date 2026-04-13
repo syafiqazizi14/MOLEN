@@ -161,23 +161,29 @@
 
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-bold mb-2">Tim</label>
+                    
+                    @php
+                        // Determine authorization
+                        $canSelectAnyTeam = Auth::user()->is_admin || Auth::user()->team_id == 1;
+                        $isRegularLeader = Auth::user()->team_id && !Auth::user()->is_admin && Auth::user()->team_id != 1;
+                    @endphp
+                    
                     <select name="team_id" id="modal-team-select"
-                        class="w-full border p-2 rounded {{ $isLeader && !$isAdmin ? 'bg-gray-100 cursor-not-allowed' : '' }}"
-                        onchange="updateSurveyDropdown()" required>
-                        @if (!$isLeader || $isAdmin)
+                        class="w-full border p-2 rounded {{ $isRegularLeader ? 'bg-gray-100 cursor-not-allowed' : '' }}"
+                        onchange="updateSurveyDropdown()" required {{ $isRegularLeader ? 'disabled' : '' }}>
+                        @if (!$isRegularLeader)
                             <option value="">-- Pilih Tim --</option>
                         @endif
                         @foreach ($teams as $t)
                             <option value="{{ $t->id }}"
-                                {{ $isLeader && Auth::user()->team_id == $t->id ? 'selected' : '' }}>
+                                {{ $isRegularLeader && Auth::user()->team_id == $t->id ? 'selected' : '' }}
+                                {{ $canSelectAnyTeam && Auth::user()->team_id == $t->id ? 'selected' : '' }}>
                                 {{ $t->name }}</option>
                         @endforeach
                     </select>
-                    @if ($isLeader && !$isAdmin)
+                    
+                    @if ($isRegularLeader)
                         <input type="hidden" name="team_id" value="{{ Auth::user()->team_id }}">
-                        <script>
-                            document.getElementById('modal-team-select').disabled = true;
-                        </script>
                     @endif
                 </div>
 
@@ -214,7 +220,8 @@
     <script>
         // Data dari Controller (Safe Mode)
         const teamSurveys = @json($teamSurveys ?? []);
-        const isLeader = @json($isLeader && !$isAdmin);
+        const isLeader = @json($isLeader && !$canManageAllTeams);
+        const canManageAllTeams = @json($canManageAllTeams ?? false);
 
         // --- FUNGSI MODAL ---
         function openRateModal() {
@@ -236,8 +243,13 @@
                 const list = Array.isArray(surveys) ? surveys : Object.keys(surveys);
                 list.forEach(s => {
                     let opt = document.createElement('option');
-                    opt.value = s;
-                    opt.innerHTML = s;
+                    if (typeof s === 'string') {
+                        opt.value = s;
+                        opt.innerHTML = s;
+                    } else if (s && s.name) {
+                        opt.value = s.name;
+                        opt.innerHTML = s.name + (s.kro ? ' [' + s.kro + ']' : '');
+                    }
                     surveySelect.appendChild(opt);
                 });
             }
