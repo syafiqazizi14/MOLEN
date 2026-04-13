@@ -148,7 +148,8 @@
     </div>
 
     <div id="rateModal"
-        class="fixed inset-0 z-[10000] hidden overflow-y-auto bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        class="fixed inset-0 z-[10000] hidden overflow-y-auto bg-gray-900 bg-opacity-50" style="display: none;">
+        <div class="flex items-center justify-center h-full">
         <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
             <div class="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between">
                 <h5 class="font-bold">Tambah Harga Survei</h5>
@@ -214,6 +215,7 @@
                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold">Simpan</button>
                 </div>
             </form>
+        </div>
         </div>
     </div>
 
