@@ -26,8 +26,14 @@ class PlacementController extends Controller
 
         $canEdit = $isAdmin || $isLeader;
 
-        // 3. Data Tim (Kecualikan Admin ID 1)
-        $teams = Team::where('id', '!=', 1)->get();
+        // 3. Data Tim
+        // Admin atau team_id 1 bisa lihat semua tim
+        // Regular users hanya lihat tim selain team 1
+        if ($isAdmin || $user->team_id == 1) {
+            $teams = Team::orderBy('name')->get();
+        } else {
+            $teams = Team::where('id', '!=', 1)->orderBy('name')->get();
+        }
 
         // 4. Query Mitra UTAMA (Dashboard Tabel)
         // Logika: Tampilkan SEMUA mitra yang MEMILIKI TUGAS di bulan/tahun ini.
@@ -115,6 +121,18 @@ class PlacementController extends Controller
                     'month'    => 'required',
                     'survey_1' => 'required',
                 ]);
+            
+                $user = Auth::user();
+                $requestedTeamId = $request->input('team_id');
+                
+                // AUTHORIZATION CHECK:
+                // - Admin atau team_id 1 bisa assign ke tim manapun
+                // - Regular user hanya bisa ke tim mereka sendiri
+                if (!$user->is_admin && $user->team_id != 1) {
+                    if ($user->team_id != $requestedTeamId) {
+                        return back()->with('error', 'Anda hanya bisa menambah mitra ke tim Anda sendiri.');
+                    }
+                }
             
                 $status = $request->input('status_anggota', 'Tetap');
             

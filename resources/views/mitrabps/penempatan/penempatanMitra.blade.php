@@ -383,23 +383,47 @@
                                 class="text-red-500">*</span></label>
 
                         @php
-                            // Cek apakah user adalah Ketua Tim (Bukan Admin)
-                            $isLeader = Auth::user()->team_id && !Auth::user()->is_mitra_admin;
+                            // Cek apakah user adalah Ketua Tim (Bukan Admin/Mitra Admin)
+                            // Admin dan team 1 bisa pilih tim manapun
+                            $isLeader = Auth::user()->team_id && !Auth::user()->is_mitra_admin && !Auth::user()->is_admin && Auth::user()->team_id != 1;
                             $userTeamId = Auth::user()->team_id;
+                            $isAdminOrTeam1 = Auth::user()->is_admin || Auth::user()->team_id == 1;
                         @endphp
 
                         <select name="team_id" id="modal-team-select"
                             class="w-full border p-2 rounded text-sm {{ $isLeader ? 'bg-gray-100 cursor-not-allowed' : '' }}"
-                            required onchange="updateModalSurveys()" {{ $isLeader ? 'disabled' : '' }}>
+                            required onchange="updateModalSurveys(); loadTeamSurveys();" {{ $isLeader ? 'disabled' : '' }}>
 
                             <option value="">-- Pilih Tim --</option>
 
                             @foreach ($teams as $t)
                                 <option value="{{ $t->id }}" {{-- Jika Ketua Tim, otomatis select tim dia --}}
-                                    {{ $isLeader && $userTeamId == $t->id ? 'selected' : '' }}>
+                                    {{ $isLeader && $userTeamId == $t->id ? 'selected' : '' }}
+                                    {{ $isAdminOrTeam1 && $userTeamId == $t->id ? 'selected' : '' }}>
                                     {{ $t->name }}
                                 </option>
                             @endforeach
+                            
+                            {{-- Untuk Admin/Team 1: Tambah Team 1 jika belum ada --}}
+                            @if ($isAdminOrTeam1)
+                                @php
+                                    $team1Exists = false;
+                                    foreach ($teams as $t) {
+                                        if ($t->id == 1) {
+                                            $team1Exists = true;
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                @if (!$team1Exists)
+                                    @php
+                                        $team1 = \App\Models\Team::find(1);
+                                    @endphp
+                                    @if ($team1)
+                                        <option value="1">{{ $team1->name }}</option>
+                                    @endif
+                                @endif
+                            @endif
                         </select>
 
                         @if ($isLeader)
@@ -823,13 +847,22 @@
                 tomSelectInstance.clear();
             }
 
-            // Khusus Ketua Tim: Auto Select Tim Sendiri
-            if (isUserLeader) {
+            // Auto select team untuk non-admin users (leaders)
+            // Admin dan team 1 bisa pilih tim manapun
+            if (isUserLeader && !isUserAdmin && !isUserTeam1) {
                 const teamSelect = document.getElementById('modal-team-select');
                 if (teamSelect) {
                     teamSelect.value = userTeamId;
                     updateModalSurveys(); // Load survei langsung
-                    updateAllSurveySelects(); // Pastikan dropdowns di-update
+                    loadTeamSurveys(); // Refresh survey list
+                }
+            } else if (isUserAdmin || isUserTeam1) {
+                // Admin/Team 1: Default select team mereka sendiri, tapi bisa diubah
+                const teamSelect = document.getElementById('modal-team-select');
+                if (teamSelect && !teamSelect.value) {
+                    teamSelect.value = userTeamId;
+                    updateModalSurveys();
+                    loadTeamSurveys();
                 }
             }
         }
@@ -968,6 +1001,11 @@
                     });
                 }
             });
+        }
+
+        // Refresh survey list ketika team selection berubah
+        function loadTeamSurveys() {
+            updateAllSurveySelects();
         }
 
         // ==========================================
