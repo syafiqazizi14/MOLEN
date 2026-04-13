@@ -71,8 +71,8 @@
                             class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded shadow flex items-center gap-2 text-sm">
                             <i class="bi bi-stars"></i> Rekomendasi
                         </a>
-                        {{-- TOMBOL KELOLA SURVEI (KHUSUS KETUA TIM) --}}
-                        @if (Auth::user()->team_id && !Auth::user()->is_mitra_admin)
+                        {{-- TOMBOL KELOLA SURVEI (KHUSUS KETUA TIM, ADMIN, ATAU TIM ID 1) --}}
+                        @if ((Auth::user()->team_id && !Auth::user()->is_mitra_admin) || Auth::user()->is_admin || Auth::user()->team_id == 1)
                             <button onclick="openSurveyModal()"
                                 class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded shadow flex items-center gap-2 text-sm transition duration-200">
                                 <i class="bi bi-list-check"></i> Kelola Survei
@@ -451,6 +451,28 @@
                         <h6 class="text-sm font-bold text-teal-900 mb-4 pb-3 border-b border-teal-200">Tambah Survei Baru</h6>
                         
                         <div class="space-y-3">
+                            {{-- KOLOM PILIH TIM (HANYA UNTUK ADMIN/TIM 1) --}}
+                            @if (Auth::user()->is_admin || Auth::user()->team_id == 1)
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1.5">Pilih Tim</label>
+                                <select name="target_team_id" id="survey-team-select" 
+                                    class="w-full border border-gray-300 p-2.5 rounded-md text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                                    onchange="loadSurveyKroList(); refreshSurveysList();" required>
+                                    <option value="">-- Pilih Tim --</option>
+                                    @foreach($teams as $t)
+                                        <option value="{{ $t->id }}" @if($t->id == Auth::user()->team_id) selected @endif>{{ $t->name }}</option>
+                                    @endforeach
+                                    @if (Auth::user()->is_admin)
+                                        @foreach (\App\Models\Team::where('id', 1)->get() as $t)
+                                            <option value="{{ $t->id }}">{{ $t->name }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                            </div>
+                            @else
+                                <input type="hidden" name="target_team_id" value="{{ Auth::user()->team_id }}">
+                            @endif
+
                             <div>
                                 <label class="block text-xs font-semibold text-gray-700 mb-1.5">Nama Survei</label>
                                 <input type="text" name="survey_name"
@@ -493,7 +515,7 @@
                     <div class="border-t border-gray-200 my-6"></div>
 
                     <h6 class="text-sm font-bold text-gray-800 mb-4">Daftar Survei Tersedia</h6>
-                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 max-h-64 overflow-y-auto custom-scrollbar space-y-2">
+                    <div class="bg-gray-50 rounded-lg border border-gray-200 p-3 max-h-64 overflow-y-auto custom-scrollbar space-y-2" id="surveys-list-container">
                         @php
                             $myTeamSurveys = [];
                             if (Auth::user()->team_id) {
@@ -623,6 +645,8 @@
         // Status User (Apakah Ketua Tim?)
         const isUserLeader = @json(Auth::user()->team_id && !Auth::user()->is_mitra_admin);
         const userTeamId = @json(Auth::user()->team_id);
+        const isUserAdmin = @json(Auth::user()->is_admin);
+        const isUserTeam1 = @json(Auth::user()->team_id == 1);
 
         let tomSelectInstance = null;
         let currentLockedTeams = []; // Array untuk menyimpan tim utama mitra
@@ -636,6 +660,14 @@
                 modal.classList.remove('hidden');
                 // Load KRO list dan init Tom Select
                 loadKroList();
+                // Refresh survey list to show current team's surveys
+                refreshSurveysList();
+                // Jika user adalah admin atau team 1, pastikan team selection di-initialize
+                const teamSelect = document.getElementById('survey-team-select');
+                if (teamSelect && !teamSelect.value) {
+                    teamSelect.value = "{{ Auth::user()->team_id }}";
+                    loadSurveyKroList();
+                }
             } else {
                 console.error("Modal Survey tidak ditemukan di HTML");
             }
@@ -648,11 +680,25 @@
 
         // Load KRO list dari API dan init Tom Select
         function loadKroList() {
+            loadSurveyKroList();
+        }
+
+        function loadSurveyKroList() {
             const kroDropdown = document.getElementById('kro-dropdown');
+            const teamSelect = document.getElementById('survey-team-select');
+            
             if (!kroDropdown) return;
 
-            // Fetch KRO list dari API
-            fetch("{{ route('api.kro.list') }}")
+            // Tentukan team_id
+            const teamId = teamSelect ? teamSelect.value : "{{ Auth::user()->team_id }}";
+            
+            if (!teamId) {
+                kroDropdown.innerHTML = '<option value="">-- Pilih Tim Terlebih Dahulu --</option>';
+                return;
+            }
+
+            // Fetch KRO list dari API dengan team_id parameter
+            fetch("{{ route('api.kro.list') }}?team_id=" + teamId)
                 .then(response => response.json())
                 .then(data => {
                     // Clear existing options (except the placeholder)
@@ -686,6 +732,54 @@
                 .catch(error => {
                     console.error('Error loading KRO list:', error);
                 });
+        }
+
+        // Fungsi untuk refresh daftar survei saat team berubah
+        function refreshSurveysList() {
+            const teamSelect = document.getElementById('survey-team-select');
+            const container = document.getElementById('surveys-list-container');
+            
+            if (!teamSelect || !container) return;
+
+            const selectedTeamId = teamSelect.value;
+            
+            if (!selectedTeamId || !teamSurveys[selectedTeamId]) {
+                container.innerHTML = '<div class="text-center py-6"><p class="text-sm text-gray-400">Belum ada survei. Tambahkan survei baru di atas.</p></div>';
+                return;
+            }
+
+            const surveys = teamSurveys[selectedTeamId];
+            
+            if (!Array.isArray(surveys) || surveys.length === 0) {
+                container.innerHTML = '<div class="text-center py-6"><p class="text-sm text-gray-400">Belum ada survei. Tambahkan survei baru di atas.</p></div>';
+                return;
+            }
+
+            let html = '';
+            surveys.forEach((s, index) => {
+                const tglMulaiFormatted = s.tanggal_mulai ? new Date(s.tanggal_mulai).toLocaleDateString('id-ID') : '-';
+                const tglSelesaiFormatted = s.tanggal_selesai ? new Date(s.tanggal_selesai).toLocaleDateString('id-ID') : '-';
+                
+                html += `
+                <div class="bg-white rounded-lg border border-gray-300 p-4 hover:shadow-md transition duration-200 survey-item-${index}">
+                    <div class="survey-text-${index}">
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 text-sm">${s.name}</h4>
+                            </div>
+                            ${s.kro ? `<span class="ml-2 inline-block bg-teal-100 text-teal-800 text-xs font-semibold px-2.5 py-1 rounded-full">${s.kro}</span>` : ''}
+                        </div>
+                        ${(s.tanggal_mulai || s.tanggal_selesai) ? `
+                            <div class="schedule-display-${index} text-xs text-gray-600 mt-2 pt-2 border-t border-gray-200">
+                                <span class="text-gray-700 font-medium">Jadwal:</span> ${tglMulaiFormatted} - ${tglSelesaiFormatted}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                `;
+            });
+
+            container.innerHTML = html;
         }
 
         // ==========================================

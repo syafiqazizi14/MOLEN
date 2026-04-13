@@ -10,12 +10,18 @@ use Illuminate\Support\Facades\Auth;
 class TeamSurveyController extends Controller
 {
     // Get KRO List untuk dropdown - Per Team
-    public function getKroList()
+    public function getKroList(Request $request)
     {
         $user = Auth::user();
-        $teamId = $user->team_id;
+        // Jika ada team_id di request (untuk admin/team 1 yang ingin lihat KRO tim lain)
+        $teamId = $request->query('team_id', $user->team_id);
 
         if (!$teamId) {
+            return response()->json([]);
+        }
+
+        // Validasi: user hanya bisa lihat KRO jika dia admin, team_id 1, atau itu tim sendiri
+        if (!$user->is_admin && $user->team_id != 1 && $user->team_id != $teamId) {
             return response()->json([]);
         }
 
@@ -41,13 +47,26 @@ class TeamSurveyController extends Controller
             'kro' => 'required|max:255',
             'tanggal_mulai' => 'nullable|date',
             'tanggal_selesai' => 'nullable|date',
+            'target_team_id' => 'nullable|integer|exists:teams,id', // Optional: for admin/team 1
         ]);
 
         $user = Auth::user();
-        $teamId = $user->team_id;
+        
+        // Tentukan team_id yang ditargetkan
+        // Jika admin atau team_id 1, gunakan yang di request, jika tidak gunakan user's team
+        if ($user->is_admin || $user->team_id == 1) {
+            $teamId = $request->input('target_team_id', $user->team_id);
+        } else {
+            $teamId = $user->team_id;
+        }
 
         if (!$teamId) {
             return back()->with('error', 'Anda tidak memiliki tim untuk dikelola.');
+        }
+
+        // Validasi: user hanya bisa add surveys ke team mereka sendiri ATAU jika admin/team 1
+        if (!$user->is_admin && $user->team_id != 1 && $user->team_id != $teamId) {
+            return back()->with('error', 'Anda tidak memiliki izin untuk menambah survei ke tim ini.');
         }
 
         $team = Team::findOrFail($teamId);
